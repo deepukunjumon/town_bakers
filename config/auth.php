@@ -43,7 +43,7 @@
 
             'api' => [
                 'driver' => 'jwt',
-                'provider' => 'branches',
+                'provider' => 'users',
             ],
         ],
 
@@ -68,11 +68,6 @@
             'users' => [
                 'driver' => 'eloquent',
                 'model' => env('AUTH_MODEL', App\Models\User::class),
-            ],
-
-            'branches' => [
-                'driver' => 'eloquent',
-                'model' => App\Models\Branch::class,
             ],
 
             // 'users' => [

@@ -15,7 +15,6 @@ class Branch extends Authenticatable implements JWTSubject
         'id',
         'code',
         'name',
-        'password'
     ];
 
     public $incrementing = false;
@@ -44,7 +43,7 @@ class Branch extends Authenticatable implements JWTSubject
     public function getJWTCustomClaims()
     {
         return [
-            'id' => $this->id,
+            'branch_id' => $this->id,
             'code' => $this->code
         ];
     }

@@ -11,7 +11,7 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
-        $credentials = $request->only('code', 'password');
+        $credentials = $request->only('username', 'password');
 
         if (!$token = Auth::guard('api')->attempt($credentials)) {
             return response()->json([

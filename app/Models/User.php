@@ -6,6 +6,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Tymon\JWTAuth\Contracts\JWTSubject;
+use Ramsey\Uuid\Guid\Guid;
 
 class User extends Authenticatable implements JWTSubject
 {
@@ -21,7 +22,6 @@ class User extends Authenticatable implements JWTSubject
     {
         return [];
     }
-
 
     /**
      * The attributes that are mass assignable.
@@ -42,6 +42,27 @@ class User extends Authenticatable implements JWTSubject
     protected $hidden = [
         'password',
         'remember_token',
+    ];
+
+    /**
+     * Get the UUID for the user.
+     *
+     * @return string
+     */
+    public function getIdAttribute($value)
+    {
+        // Cast the 'id' to UUID format
+        return (string) Guid::fromString($value);
+    }
+
+    /**
+     * The attributes that should be cast.
+     *
+     * @var list<string>
+     */
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
     ];
 
     /**

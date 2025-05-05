@@ -56,12 +56,16 @@ class TripController extends Controller
         $request->validate([
             'date' => 'required|date',
         ]);
-
+    
         $date = $request->date;
-
+        
+        // Get branch_id from authenticated user (token)
+        $branchId = auth()->payload()->get('branch_id');
+    
         $items = DB::table('stock_items')
             ->join('items', 'stock_items.item_id', '=', 'items.id')
             ->join('trips', 'stock_items.trip_id', '=', 'trips.id')
+            ->where('trips.branch_id', $branchId)
             ->whereDate('trips.date', $date)
             ->select(
                 'items.name as item_name',
@@ -70,15 +74,16 @@ class TripController extends Controller
             ->groupBy('items.name')
             ->get()
             ->toArray();
-
+    
         return response()->json([
             'success' => true,
-            'message' => 'fetched',
+            'message' => 'Fetched stock summary for ' . $date,
             'date' => $date,
+            'branch_id' => $branchId,
             'data' => $items
         ]);
     }
-
+    
     public function exportItemsByDate(Request $request, $branch_id)
     {
         $request->validate([
