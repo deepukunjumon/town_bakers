@@ -7,6 +7,8 @@ use Illuminate\Support\Str;
 
 class Items extends Model
 {
+    protected $keyType = 'string';
+    public $incrementing = false;
     protected $fillable = ['id', 'name', 'description', 'category', 'status'];
 
     protected static function boot()

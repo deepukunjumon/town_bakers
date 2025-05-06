@@ -36,4 +36,26 @@ class ItemsController extends Controller
             'message' => 'Item created successfully'
         ], 201);
     }
+
+    public function getItems(Request $request)
+    {
+        // Optional: Apply filters if any query parameters are provided
+        $query = Items::query();
+
+        if ($request->has('category')) {
+            $query->where('category', $request->category);
+        }
+
+        if ($request->has('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Optionally, add pagination or return all items
+        $items = $query->paginate(10); // Adjust the number (10) for your pagination size
+
+        return response()->json([
+            'success' => true,
+            'data' => $items
+        ]);
+    }
 }

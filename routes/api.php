@@ -31,7 +31,7 @@ Route::middleware(['auth:api'])->group(function () {
 
     // Public/General Routes for all authenticated users
     Route::post('/create/item', [ItemsController::class, 'createItem']);
-    Route::get('/items', [ItemsController::class, 'getItems']);
+    Route::get('/items/list', [ItemsController::class, 'getItems']);
 
     Route::post('/create/employee', [EmployeeController::class, 'createEmployee']);
 
