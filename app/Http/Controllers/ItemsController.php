@@ -37,25 +37,25 @@ class ItemsController extends Controller
         ], 201);
     }
 
-    public function getItems(Request $request)
+    /**
+     * Get a list of items
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getItems()
     {
-        // Optional: Apply filters if any query parameters are provided
-        $query = Items::query();
-
-        if ($request->has('category')) {
-            $query->where('category', $request->category);
-        }
-
-        if ($request->has('status')) {
-            $query->where('status', $request->status);
-        }
-
-        // Optionally, add pagination or return all items
-        $items = $query->paginate(10); // Adjust the number (10) for your pagination size
-
+        $items = Items::where('status', DEFAULT_STATUSES['active'])
+            ->get(['id', 'name'])
+            ->map(function ($items) {
+                return [
+                    'id' => $items->id,
+                    'name' => $items->name
+                ];
+            });
+    
         return response()->json([
             'success' => true,
-            'data' => $items
-        ]);
+            'items' => $items
+        ], 200);
     }
 }

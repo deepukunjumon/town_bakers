@@ -62,21 +62,26 @@ class TripController extends Controller
 
     public function getItemsByDate(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'date' => 'required|date',
         ]);
 
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
         $date = $request->date;
 
-        // Get branch_id from authenticated user (token)
         $branchId = Auth::user()->branch_id;
 
-        // Query to get stock items for the given date, filtered by branch_id
         $items = DB::table('stock_items')
             ->join('items', 'stock_items.item_id', '=', 'items.id')
             ->join('trips', 'stock_items.trip_id', '=', 'trips.id')
             ->whereDate('trips.date', $date)
-            ->where('trips.branch_id', $branchId)  // Add condition for the branch_id
+            ->where('trips.branch_id', $branchId)
             ->select(
                 'items.name as item_name',
                 DB::raw('SUM(stock_items.quantity) as total_quantity')
@@ -85,10 +90,9 @@ class TripController extends Controller
             ->get()
             ->toArray();
 
-        // Return response with stock summary for the date
         return response()->json([
             'success' => true,
-            'message' => 'Fetched stock summary of ' . $branchId . ' for ' . $date,
+            'message' => 'Fetched stock summary',
             'date' => $date,
             'data' => $items
         ]);
@@ -142,7 +146,7 @@ class TripController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Fetched stock summary for ' . $date,
+            'message' => 'Fetched stock summary',
             'date' => $date,
             'data' => array_values($formattedData)
         ]);

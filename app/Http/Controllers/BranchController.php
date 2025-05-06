@@ -65,4 +65,23 @@ class BranchController extends Controller
     {
         return response()->json(Branch::all());
     }
+
+    
+
+    public function getMinimalBranches()
+    {
+        $branches = Branch::get(['id', 'code', 'name'])
+            ->map(function ($branch) {
+                return [
+                    'id' => $branch->id,
+                    'code' => $branch->code,
+                    'name' => $branch->name
+                ];
+            });
+    
+        return response()->json([
+            'success' => true,
+            'branches' => $branches
+        ], 200);
+    } 
 }

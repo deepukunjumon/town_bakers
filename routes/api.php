@@ -22,16 +22,18 @@ Route::middleware(['auth:api'])->group(function () {
 
         Route::put('/employee/{employee_id}', [EmployeeController::class, 'updateEmployee']);
         Route::get('/employees', [EmployeeController::class, 'getEmployeesForAuthenticatedBranch']);
-
+        
         Route::get('/branchwise/stocks/summary', [TripController::class, 'branchwiseStocksSummary']);
     });
-
+    
     // Branch specific routes (for branch-level access)
     Route::middleware('branch')->group(function () {});
-
+    
     // Public/General Routes for all authenticated users
     Route::post('/create/item', [ItemsController::class, 'createItem']);
     Route::get('/items/list', [ItemsController::class, 'getItems']);
+    Route::get('/employees/minimal', [EmployeeController::class, 'getMinimalEmployees']);
+    Route::get('/branches/minimal', [BranchController::class, 'getMinimalBranches']);
 
     Route::post('/create/employee', [EmployeeController::class, 'createEmployee']);
 

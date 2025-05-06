@@ -92,4 +92,22 @@ class EmployeeController extends Controller
 
         return response()->json($employees);
     }
+
+    public function getMinimalEmployees()
+    {
+        $employees = Employee::where('status', DEFAULT_STATUSES['active'])
+            ->get(['id', 'employee_code', 'name', 'designation'])
+            ->map(function ($employee) {
+                return [
+                    'id' => $employee->id,
+                    'employee_code' => $employee->employee_code,
+                    'name' => $employee->name
+                ];
+            });
+    
+        return response()->json([
+            'success' => true,
+            'employees' => $employees
+        ], 200);
+    }    
 }

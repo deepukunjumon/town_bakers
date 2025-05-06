@@ -15,3 +15,11 @@ if (!defined('DEFAULT_PASSWORD')) {
 if (!defined('DEFAULT_USERNAME_PREFIX')) {
     define('DEFAULT_USERNAME_PREFIX', 'TBMS');
 }
+
+if (!defined('DEFAULT_STATUSES')) {
+    define('DEFAULT_STATUSES', [
+        'active' => 1,
+        'inactive' => 0,
+        'deleted' => -1,
+    ]);
+}
