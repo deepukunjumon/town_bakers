@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\AdminMiddleware;
+use App\Http\Middleware\BranchMiddleware;
 
 class HttpMiddleware
 {
@@ -15,8 +16,7 @@ class HttpMiddleware
     ];
 
     protected $routeMiddleware = [
-        'admin' => \App\Http\Middleware\AdminMiddleware::class,
-        'branch' => \App\Http\Middleware\BranchMiddleware::class,
+        'admin' => AdminMiddleware::class,
+        'branch' => BranchMiddleware::class,
     ];
 }
-

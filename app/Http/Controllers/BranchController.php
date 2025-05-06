@@ -3,27 +3,46 @@
 namespace App\Http\Controllers;
 
 use App\Models\Branch;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
 
 class BranchController extends Controller
 {
     public function createBranch(Request $request)
     {
-        $request->validate([
+        $validator = validator::make($request->all(), [
             'code' => 'required|string|unique:branches,code',
             'name' => 'required|string',
         ]);
 
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        // Create the branch
         $branch = Branch::create([
             'code' => $request->code,
             'name' => $request->name,
-            'password' => Hash::make(DEFAULT_PASSWORD)
+        ]);
+
+        $username = DEFAULT_USERNAME_PREFIX . strtoupper($request->code);
+        // Create a user for the branch
+        $user = User::create([
+            'username' => $username,
+            'password' => Hash::make(DEFAULT_PASSWORD),
+            'branch_id' => $branch->id,
+            'is_admin' => false
         ]);
 
         return response()->json([
             'success' => true,
             'message' => 'Branch created successfully',
+            'branch' => $branch,
         ], 201);
     }
 

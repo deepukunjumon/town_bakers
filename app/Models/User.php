@@ -7,12 +7,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 use Ramsey\Uuid\Guid\Guid;
+use Illuminate\Support\Str;
 
 class User extends Authenticatable implements JWTSubject
 {
     use HasFactory;
 
-    // Add the following two methods required by JWTSubject interface
     public function getJWTIdentifier()
     {
         return $this->getKey();
@@ -20,61 +20,55 @@ class User extends Authenticatable implements JWTSubject
 
     public function getJWTCustomClaims()
     {
-        return [];
+        $this->is_admin === 1 ? $role = 'admin' : $role = 'branch';
+        if ($role == 'admin') {
+            return [
+                'role' => $role,
+                'branch_id' => null
+            ];
+        }
+        if ($role == 'branch') {
+            return [
+                'role' => $role,
+                'branch_id' => $this->branch_id
+            ];
+        }
     }
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
+    public function branch()
+    {
+        return $this->belongsTo(Branch::class);
+    }
+
     protected $fillable = [
-        'name',
-        'email',
+        'username',
         'password',
+        'is_admin',
+        'branch_id',
+        'status'
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the UUID for the user.
-     *
-     * @return string
-     */
     public function getIdAttribute($value)
     {
-        // Cast the 'id' to UUID format
-        return (string) Guid::fromString($value);
+        return (string) $value;
     }
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var list<string>
-     */
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
+    protected static function booted()
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
+        static::creating(function ($user) {
+            if (!$user->getKey()) {
+                $user->id = (string) Str::uuid();
+            }
+        });
     }
 }

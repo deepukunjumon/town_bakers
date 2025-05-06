@@ -6,12 +6,13 @@ use App\Models\Stock;
 use App\Models\Branch;
 use App\Models\Employee;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class StockController extends Controller
 {
     public function addStock(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'branch_id' => 'required|exists:branches,id',
             'employee_id' => 'required|exists:employees,id',
             'item_id' => 'required|exists:items,id',
@@ -19,6 +20,13 @@ class StockController extends Controller
             'trip_code' => 'nullable|string',
             'date' => 'nullable|date'
         ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors(),
+            ], 422);
+        }
 
         $stock = Stock::create([
             'branch_id' => $request->branch_id,

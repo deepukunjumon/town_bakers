@@ -10,14 +10,16 @@ class BranchMiddleware
 {
     public function handle(Request $request, Closure $next)
     {
-        $branchId = $request->route('branch_id');
-        $userBranchId = auth()->user()->branch_id;
-
-        if ($branchId != $userBranchId) {
-            return response()->json(['error' => 'Forbidden'], 403);
+        if ($request->user()->branch_id === $request->branch_id) {
+            return $next($request);
         }
 
-        return $next($request);
+        return response()->json(
+            [
+                'success' => false,
+                'message' => 'Unauthorized'
+            ],
+            401
+        );
     }
 }
-

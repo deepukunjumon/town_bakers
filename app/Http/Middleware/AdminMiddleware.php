@@ -14,7 +14,12 @@ class AdminMiddleware
             return $next($request);
         }
 
-        // If the user is not an admin, return a 403 Forbidden response
-        return response()->json(['message' => 'Forbidden'], 403);
+        return response()->json(
+            [
+                'success' => false,
+                'message' => 'Unauthorized'
+            ],
+            401
+        );
     }
 }

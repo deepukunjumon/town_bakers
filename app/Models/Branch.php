@@ -11,6 +11,11 @@ class Branch extends Authenticatable implements JWTSubject
 {
     use HasFactory;
 
+    public function users()
+    {
+        return $this->hasMany(User::class);
+    }
+
     protected $fillable = [
         'id',
         'code',

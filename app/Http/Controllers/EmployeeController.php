@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Employee;
 use App\Models\Branch;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
 
 class EmployeeController extends Controller
@@ -11,13 +12,20 @@ class EmployeeController extends Controller
     // Add a new employee
     public function createEmployee(Request $request)
     {
-        $request->validate([
+        $validator = Validator::make($request->all(), [
             'employee_code' => 'required|string|unique:employees,employee_code',
             'name' => 'required|string',
             'mobile' => 'required|digits:10',
             'designation' => 'required|in:sales_manager,salesman',
             'branch_id' => 'required|exists:branches,id',
         ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors(),
+            ], 422);
+        }
 
         $employee = Employee::create([
             'employee_code' => $request->employee_code,
@@ -36,7 +44,6 @@ class EmployeeController extends Controller
 
     public function updateEmployee(Request $request, $employee_id)
     {
-        // Validate incoming fields, 'sometimes' means they are optional and validated only if present.
         $request->validate([
             'name' => 'sometimes|string',
             'mobile' => 'sometimes|digits:10',
