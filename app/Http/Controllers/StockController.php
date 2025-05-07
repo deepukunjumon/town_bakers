@@ -67,6 +67,12 @@ class StockCOntroller extends Controller
 
     public function getItemsByDate(Request $request)
     {
+        if ($request->has('export')) {
+            $request->merge([
+                'export' => filter_var($request->input('export'), FILTER_VALIDATE_BOOLEAN),
+            ]);
+        }
+
         $validator = Validator::make($request->all(), [
             'date' => 'required|date',
             'export' => 'sometimes|boolean',
@@ -141,7 +147,7 @@ class StockCOntroller extends Controller
 
                 $safeBranch = htmlentities($branchName, ENT_QUOTES, 'UTF-8');
                 $safeAddress = htmlentities($branch->address ?? 'N/A', ENT_QUOTES, 'UTF-8');
-                $safeMobile = htmlentities($branch->phone ?? 'N/A', ENT_QUOTES, 'UTF-8');
+                $safeMobile = htmlentities($branch->mobile ?? 'N/A', ENT_QUOTES, 'UTF-8');
                 $safeDate = $date->format('d-m-Y');
 
                 $html = '
