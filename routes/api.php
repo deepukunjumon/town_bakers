@@ -4,7 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\ItemsController;
-use App\Http\Controllers\TripController;
+use App\Http\Controllers\StockController;
 use App\Http\Middleware\AdminMiddleware;
 use Illuminate\Support\Facades\Route;
 
@@ -21,23 +21,24 @@ Route::middleware(['auth:api'])->group(function () {
         Route::get('/branches', [BranchController::class, 'getBranches']);
 
         Route::put('/employee/{employee_id}', [EmployeeController::class, 'updateEmployee']);
-        Route::get('/employees', [EmployeeController::class, 'getEmployeesForAuthenticatedBranch']);
-        
-        Route::get('/branchwise/stocks/summary', [TripController::class, 'branchwiseStocksSummary']);
+
+        Route::get('/branchwise/stocks/summary', [StockController::class, 'branchwiseStocksSummary']);
     });
-    
-    // Branch specific routes (for branch-level access)
-    Route::middleware('branch')->group(function () {});
-    
+
+    Route::middleware('branch')->group(function () {
+        // Route::get('/branch/employees', [EmployeeController::class, 'getEmployeesForAuthenticatedBranch']);
+    });
+
     // Public/General Routes for all authenticated users
     Route::post('/create/item', [ItemsController::class, 'createItem']);
     Route::get('/items/list', [ItemsController::class, 'getItems']);
-    Route::get('/employees/minimal', [EmployeeController::class, 'getMinimalEmployees']);
     Route::get('/branches/minimal', [BranchController::class, 'getMinimalBranches']);
 
     Route::post('/create/employee', [EmployeeController::class, 'createEmployee']);
+    Route::get('/employees/minimal', [EmployeeController::class, 'getMinimalEmployees']);
+    Route::get('/employees/{branch_id}', [EmployeeController::class, 'getEmployeesByBranch']);
 
-    Route::post('/stock/add', [TripController::class, 'addStock']);
-    Route::get('/stock/trip/{trip_id}', [TripController::class, 'getTripDetails']);
-    Route::get('/stocks/summary', [TripController::class, 'getItemsByDate']);
+    Route::post('/stock/add', [StockController::class, 'addStock']);
+    Route::get('/stock/trip/{trip_id}', [StockController::class, 'getTripDetails']);
+    Route::get('/stocks/summary', [StockController::class, 'getItemsByDate']);
 });

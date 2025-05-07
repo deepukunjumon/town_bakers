@@ -71,8 +71,7 @@ class EmployeeController extends Controller
     }
 
 
-    // List all employees of a branch
-    public function getEmployees($branch_id)
+    public function getEmployeesByBranch($branch_id)
     {
         $branch = Branch::find($branch_id);
 
@@ -80,17 +79,23 @@ class EmployeeController extends Controller
             return response()->json(['error' => 'Branch not found'], 404);
         }
 
-        $employees = $branch->employees()->get(['employee_code', 'name', 'designation'])
+        $employees = $branch->employees()
+            ->orderBy('employee_code', 'asc')
+            ->get(['id', 'employee_code', 'name', 'designation', 'mobile'])
             ->map(function ($employee) use ($branch) {
                 return [
                     'employee_code' => $employee->employee_code,
                     'name' => $employee->name,
                     'designation' => $employee->designation,
+                    'mobile' => $employee->mobile,
                     'branch_code' => $branch->code,
                 ];
             });
 
-        return response()->json($employees);
+        return response()->json([
+            'success' => true,
+            'employees' => $employees
+        ]);
     }
 
     public function getMinimalEmployees()
@@ -104,10 +109,10 @@ class EmployeeController extends Controller
                     'name' => $employee->name
                 ];
             });
-    
+
         return response()->json([
             'success' => true,
             'employees' => $employees
         ], 200);
-    }    
+    }
 }
