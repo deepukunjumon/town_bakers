@@ -2,29 +2,17 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
-use App\Models\Designations;
 
-class Employee extends Model
+class Designations extends Model
 {
-    use HasFactory;
 
     protected $fillable = [
         'id',
-        'employee_code',
-        'name',
-        'mobile',
-        'designation_id',
-        'status',
-        'branch_id'
+        'designation',
+        'status'
     ];
-
-    public function designation()
-    {
-        return $this->belongsTo(Designations::class);
-    }
 
     public $incrementing = false;
     protected $keyType = 'string';

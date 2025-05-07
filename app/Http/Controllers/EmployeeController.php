@@ -6,17 +6,18 @@ use App\Models\Employee;
 use App\Models\Branch;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class EmployeeController extends Controller
 {
     // Add a new employee
-    public function createEmployee(Request $request)
+    public function createEmployeeForAdmin(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'employee_code' => 'required|string|unique:employees,employee_code',
             'name' => 'required|string',
             'mobile' => 'required|digits:10',
-            'designation' => 'required|in:sales_manager,salesman',
+            'designation_id' => 'required|exists:designations,id',
             'branch_id' => 'required|exists:branches,id',
         ]);
 
@@ -31,9 +32,42 @@ class EmployeeController extends Controller
             'employee_code' => $request->employee_code,
             'name' => $request->name,
             'mobile' => $request->mobile,
-            'designation' => $request->designation,
+            'designation_id' => $request->designation_id,
             'status' => DEFAULT_EMPLOYEE_STATUS,
             'branch_id' => $request->branch_id,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Employee created successfully'
+        ], 201);
+    }
+
+    public function createEmployeeForBranch(Request $request)
+    {
+        $branchId = Auth::user()->branch_id;
+
+        $validator = Validator::make($request->all(), [
+            'employee_code' => 'required|string|unique:employees,employee_code',
+            'name' => 'required|string',
+            'mobile' => 'required|digits:10',
+            'designation_id' => 'required|exists:designations,id',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $employee = Employee::create([
+            'employee_code' => $request->employee_code,
+            'name' => $request->name,
+            'mobile' => $request->mobile,
+            'designation_id' => $request->designation_id,
+            'status' => DEFAULT_EMPLOYEE_STATUS,
+            'branch_id' => $branchId,
         ]);
 
         return response()->json([
@@ -47,7 +81,7 @@ class EmployeeController extends Controller
         $request->validate([
             'name' => 'sometimes|string',
             'mobile' => 'sometimes|digits:10',
-            'designation' => 'sometimes|in:sales_manager,salesman',
+            'designation_id' => $request->designation_id,
             'status' => 'sometimes|integer|in:-1,0,1',
             'branch_id' => 'sometimes|exists:branches,id',
         ]);
@@ -114,5 +148,53 @@ class EmployeeController extends Controller
             'success' => true,
             'employees' => $employees
         ], 200);
+    }
+
+    public function getEmployeesForAuthenticatedBranch()
+    {
+        try {
+            $branchId = Auth::user()->branch_id;
+
+            if (!$branchId) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Branch ID not found in token.'
+                ], 400);
+            }
+
+            $branch = Branch::find($branchId);
+
+            if (!$branch) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Branch not found.'
+                ], 404);
+            }
+
+            $employees = $branch->employees()
+            ->with('designation')
+            ->orderBy('employee_code', 'asc')
+            ->get()
+            ->map(function ($employee) use ($branch) {
+                return [
+                    'employee_code' => $employee->employee_code,
+                    'name' => $employee->name,
+                    'designation' => optional($employee->designation)->designation ?? 'N/A', // <-- fixed here
+                    'mobile' => $employee->mobile,
+                    'branch_code' => $branch->code,
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'employees' => $employees
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve employees.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 }
