@@ -5,6 +5,7 @@ use App\Http\Controllers\BranchController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\ItemsController;
 use App\Http\Controllers\StockController;
+
 use App\Http\Middleware\AdminMiddleware;
 use Illuminate\Support\Facades\Route;
 
@@ -41,4 +42,5 @@ Route::middleware(['auth:api'])->group(function () {
     Route::post('/stock/add', [StockController::class, 'addStock']);
     Route::get('/stock/trip/{trip_id}', [StockController::class, 'getTripDetails']);
     Route::get('/stocks/summary', [StockController::class, 'getItemsByDate']);
+    Route::get('/stocks/summary/export', [StockController::class, 'exportItemsByDate']);
 });
