@@ -15,6 +15,9 @@ class BranchController extends Controller
         $validator = validator::make($request->all(), [
             'code' => 'required|string|unique:branches,code',
             'name' => 'required|string',
+            'address' => 'required|string',
+            'mobile' => 'required|digits:10',
+            'phone' => 'sometimes|digits:15'
         ]);
 
         if ($validator->fails()) {
@@ -28,6 +31,9 @@ class BranchController extends Controller
         $branch = Branch::create([
             'code' => $request->code,
             'name' => $request->name,
+            'address' => $request->address,
+            'mobile' => $request->mobile,
+            'phone' => $request->phone,
         ]);
 
         $username = DEFAULT_USERNAME_PREFIX . strtoupper($request->code);
@@ -66,7 +72,7 @@ class BranchController extends Controller
         return response()->json(Branch::all());
     }
 
-    
+
 
     public function getMinimalBranches()
     {
@@ -78,10 +84,10 @@ class BranchController extends Controller
                     'name' => $branch->name
                 ];
             });
-    
+
         return response()->json([
             'success' => true,
             'branches' => $branches
         ], 200);
-    } 
+    }
 }
