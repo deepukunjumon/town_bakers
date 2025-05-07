@@ -17,7 +17,7 @@ class BranchController extends Controller
             'name' => 'required|string',
             'address' => 'required|string',
             'mobile' => 'required|digits:10',
-            'phone' => 'sometimes|digits:15'
+            'phone' => 'nullable|numeric|digits_between:1,15'
         ]);
 
         if ($validator->fails()) {
