@@ -23,6 +23,7 @@ class Branch extends Authenticatable implements JWTSubject
         'address',
         'mobile',
         'phone',
+        'status'
     ];
 
     public $incrementing = false;

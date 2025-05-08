@@ -34,6 +34,7 @@ class BranchController extends Controller
             'address' => $request->address,
             'mobile' => $request->mobile,
             'phone' => $request->phone,
+            'status' => DEFAULT_STATUSES['active'],
         ]);
 
         $username = DEFAULT_USERNAME_PREFIX . strtoupper($request->code);
@@ -48,7 +49,6 @@ class BranchController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Branch created successfully',
-            'branch' => $branch,
         ], 201);
     }
 
