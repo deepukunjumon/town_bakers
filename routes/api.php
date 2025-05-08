@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BranchController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\ItemsController;
 use App\Http\Controllers\StockController;
@@ -15,27 +16,27 @@ Route::post('/login', [AuthController::class, 'login']);
 
 // Authenticated routes
 Route::middleware('auth:api')->group(function () {
-    
+
     // Logout
     Route::post('/logout', [AuthController::class, 'logout']);
-    
+
     // Admin-only routes
-    Route::middleware(AdminMiddleware::class)->group(function () {
+    Route::prefix('admin')->middleware(AdminMiddleware::class)->group(function () {
+        Route::get('/dashboard/stats', [DashboardController::class, 'getAdminDashboardStats']);
         Route::post('/create/branch', [BranchController::class, 'createBranch']);
         Route::post('/create/employee   ', [EmployeeController::class, 'createEmployeeForAdmin']);
         Route::put('/branch/{branch_id}', [BranchController::class, 'updateBranch']);
         Route::get('/branches', [BranchController::class, 'getBranches']);
-        
+
         Route::put('/employee/{employee_id}', [EmployeeController::class, 'updateEmployee']);
         Route::get('/employees/{branch_id}', [EmployeeController::class, 'getEmployeesByBranch']);
-        
+
         Route::get('/branchwise/stocks/summary', [StockController::class, 'branchwiseStocksSummary']);
     });
-    
+
     // Branch-only routes (NOT affected by AdminMiddleware)
-    Route::middleware('branch')->group(function () {
-    });
-    
+    Route::middleware('branch')->group(function () {});
+
     Route::post('/branch/create/employee', [EmployeeController::class, 'createEmployeeForBranch']);
     Route::get('/branch/employees', [EmployeeController::class, 'getEmployeesForAuthenticatedBranch']);
     // General authenticated routes (available to all roles)
