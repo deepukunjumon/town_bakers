@@ -25,6 +25,7 @@ Route::middleware('auth:api')->group(function () {
         Route::get('/dashboard/stats', [DashboardController::class, 'getAdminDashboardStats']);
         Route::post('/create/branch', [BranchController::class, 'createBranch']);
         Route::post('/create/employee   ', [EmployeeController::class, 'createEmployeeForAdmin']);
+        Route::post('/import/employees', [EmployeeController::class, 'importEmployees']);
         Route::put('/branch/{branch_id}', [BranchController::class, 'updateBranch']);
         Route::get('/branches', [BranchController::class, 'getBranches']);
 

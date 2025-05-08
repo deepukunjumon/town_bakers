@@ -91,6 +91,7 @@ class StockCOntroller extends Controller
 
         $branch = DB::table('branches')->where('id', $branchId)->first();
         $branch_name = $branch ? $branch->name : 'Unknown Branch';
+        $branch_code = $branch ? $branch->code : 'Unknown Branch Code';
 
         $items = DB::table('stock_items')
             ->join('items', 'stock_items.item_id', '=', 'items.id')
@@ -132,7 +133,7 @@ class StockCOntroller extends Controller
 
                 if (ob_get_length()) ob_end_clean();
 
-                $filename = 'Stock_Summary_' . $date->format('Y-m-d') . '.xlsx';
+                $filename = 'Stock_Summary_'. $branch_code . '_' . $date->format('Y-m-d') . '.xlsx';
                 header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
                 header("Content-Disposition: attachment; filename=\"$filename\"");
                 header('Cache-Control: max-age=0');
@@ -244,7 +245,7 @@ class StockCOntroller extends Controller
                 $dompdf->setPaper('A4', 'portrait');
                 $dompdf->render();
 
-                $filename = 'Stock_Summary_' . $date->format('Y-m-d') . '.pdf';
+                $filename = 'Stock_Summary_' . $branch_code . '_' . $date->format('Y-m-d') . '.pdf';
                 $dompdf->stream($filename, ["Attachment" => true]);
                 exit;
             }
