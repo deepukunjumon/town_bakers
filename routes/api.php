@@ -7,8 +7,8 @@ use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\ItemsController;
 use App\Http\Controllers\StockController;
 use App\Http\Controllers\DesignationController;
-
 use App\Http\Middleware\AdminMiddleware;
+use App\Http\Middleware\BranchMiddleware;
 use Illuminate\Support\Facades\Route;
 
 // Login route (public)
@@ -36,7 +36,9 @@ Route::middleware('auth:api')->group(function () {
     });
 
     // Branch-only routes (NOT affected by AdminMiddleware)
-    Route::middleware('branch')->group(function () {});
+    Route::prefix('branch')->middleware(BranchMiddleware::class)->group(function () {
+        Route::get('/dashboard/stats', [DashboardController::class, 'getBranchDashboardStats']);
+    });
 
     Route::post('/branch/create/employee', [EmployeeController::class, 'createEmployeeForBranch']);
     Route::get('/branch/employees', [EmployeeController::class, 'getEmployeesForAuthenticatedBranch']);

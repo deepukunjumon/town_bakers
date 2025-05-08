@@ -6,7 +6,7 @@ use Closure;
 use Illuminate\Http\Request;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
-class BranchMiddleware
+class AdminMiddleware
 {
     public function handle(Request $request, Closure $next)
     {

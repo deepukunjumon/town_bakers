@@ -10,7 +10,6 @@ class DashboardController extends Controller
 {
     public function getAdminDashboardStats()
     {
-
         $activeEmployeesCount = DB::table('employees')
             ->where('status', DEFAULT_STATUSES['active'])
             ->count();
@@ -23,6 +22,21 @@ class DashboardController extends Controller
             'data' => [
                 'active_employees_count' => $activeEmployeesCount,
                 'active_branches_count' => $activeBranchesCount,
+            ]
+        ]);
+    }
+
+    public function getBranchDashboardStats()
+    {
+        $activeEmployeesCount = DB::table('employees')
+            ->where('status', DEFAULT_STATUSES['active'])
+            ->where('branch_id', Auth::user()->branch_id)
+            ->count();
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'active_employees_count' => $activeEmployeesCount,
             ]
         ]);
     }
