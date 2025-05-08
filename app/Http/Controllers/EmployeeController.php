@@ -135,7 +135,7 @@ class EmployeeController extends Controller
     public function getMinimalEmployees()
     {
         $employees = Employee::where('status', DEFAULT_STATUSES['active'])
-            ->get(['id', 'employee_code', 'name', 'designation'])
+            ->get(['id', 'employee_code', 'name'])
             ->map(function ($employee) {
                 return [
                     'id' => $employee->id,
@@ -172,18 +172,18 @@ class EmployeeController extends Controller
             }
 
             $employees = $branch->employees()
-            ->with('designation')
-            ->orderBy('employee_code', 'asc')
-            ->get()
-            ->map(function ($employee) use ($branch) {
-                return [
-                    'employee_code' => $employee->employee_code,
-                    'name' => $employee->name,
-                    'designation' => optional($employee->designation)->designation ?? 'N/A', // <-- fixed here
-                    'mobile' => $employee->mobile,
-                    'branch_code' => $branch->code,
-                ];
-            });
+                ->with('designation')
+                ->orderBy('employee_code', 'asc')
+                ->get()
+                ->map(function ($employee) use ($branch) {
+                    return [
+                        'employee_code' => $employee->employee_code,
+                        'name' => $employee->name,
+                        'designation' => optional($employee->designation)->designation ?? 'N/A', // <-- fixed here
+                        'mobile' => $employee->mobile,
+                        'branch_code' => $branch->code,
+                    ];
+                });
 
             return response()->json([
                 'success' => true,

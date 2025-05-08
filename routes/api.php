@@ -31,7 +31,7 @@ Route::middleware('auth:api')->group(function () {
         Route::put('/employee/{employee_id}', [EmployeeController::class, 'updateEmployee']);
         Route::get('/employees/{branch_id}', [EmployeeController::class, 'getEmployeesByBranch']);
 
-        Route::get('/branchwise/stock/summary', [StockController::class, 'branchwiseStockSummary']);
+        Route::post('/branchwise/stock/summary', [StockController::class, 'branchwiseStockSummary']);
     });
 
     // Branch-only routes (NOT affected by AdminMiddleware)
@@ -52,5 +52,4 @@ Route::middleware('auth:api')->group(function () {
     Route::post('/stock/add', [StockController::class, 'addStock']);
     Route::get('/stock/trip/{trip_id}', [StockController::class, 'getTripDetails']);
     Route::post('/stocks/summary', [StockController::class, 'getItemsByDate']);
-    Route::get('/stocks/summary/export', [StockController::class, 'exportItemsByDate']);
 });
