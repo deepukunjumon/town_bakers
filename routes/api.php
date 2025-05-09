@@ -7,6 +7,7 @@ use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\ItemsController;
 use App\Http\Controllers\StockController;
 use App\Http\Controllers\DesignationController;
+use App\Http\Controllers\OrderController;
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\BranchMiddleware;
 use Illuminate\Support\Facades\Route;
@@ -15,7 +16,7 @@ use Illuminate\Support\Facades\Route;
 Route::post('/login', [AuthController::class, 'login']);
 
 // Authenticated routes
-Route::middleware('auth:api')->group(function () {
+Route::middleware('jwt.auth')->group(function () {
 
     // Logout
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -38,10 +39,18 @@ Route::middleware('auth:api')->group(function () {
     // Branch-only routes (NOT affected by AdminMiddleware)
     Route::prefix('branch')->middleware(BranchMiddleware::class)->group(function () {
         Route::get('/dashboard/stats', [DashboardController::class, 'getBranchDashboardStats']);
+        
+        //Employee Routes
+        Route::post('create/employee', [EmployeeController::class, 'createEmployeeForBranch']);
+        Route::get('/employees', [EmployeeController::class, 'getEmployeesForAuthenticatedBranch']);
+        
+        //Order routes
+        Route::post('/create/order', [OrderController::class, 'createOrder']);
+        Route::get('/orders', [OrderController::class, 'getOrdersForBranch']);
+        Route::get('/orders/{id}', [OrderController::class, 'getOrderDetails']);
+        
     });
-
-    Route::post('/branch/create/employee', [EmployeeController::class, 'createEmployeeForBranch']);
-    Route::get('/branch/employees', [EmployeeController::class, 'getEmployeesForAuthenticatedBranch']);
+    
     // General authenticated routes (available to all roles)
     Route::post('/create/item', [ItemsController::class, 'createItem']);
     Route::get('/items/list', [ItemsController::class, 'getItems']);
@@ -49,10 +58,12 @@ Route::middleware('auth:api')->group(function () {
 
     Route::post('/create/designation', [DesignationController::class, 'createDesignation']);
     Route::get('/designations', [DesignationController::class, 'getAllActiveDesignations']);
-
+    
     Route::get('/employees/minimal', [EmployeeController::class, 'getMinimalEmployees']);
-
+    
     Route::post('/stock/add', [StockController::class, 'addStock']);
     Route::get('/stock/trip/{trip_id}', [StockController::class, 'getTripDetails']);
     Route::post('/stocks/summary', [StockController::class, 'getItemsByDate']);
+    
+    Route::put('/orders/{id}/status', [OrderController::class, 'updateOrderStatus']);
 });
