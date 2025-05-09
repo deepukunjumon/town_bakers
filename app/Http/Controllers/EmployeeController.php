@@ -7,6 +7,7 @@ use App\Models\Branch;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Maatwebsite\Excel\Facades\Excel;
 
 class EmployeeController extends Controller
 {
@@ -76,6 +77,80 @@ class EmployeeController extends Controller
         ], 201);
     }
 
+    public function importEmployees(Request $request)
+    {
+        $fileValidate = Validator::make($request->all(), [
+            'file' => 'required|file|mimes:xlsx,csv',
+        ]);
+    
+        if ($fileValidate->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $fileValidate->errors(),
+            ], 422);
+        }
+    
+        $file = $request->file('file');
+        $data = Excel::toArray([], $file);
+        $rows = $data[0];
+    
+        $errors = [];
+        $imported = 0;
+    
+        foreach ($rows as $index => $row) {
+            if ($index === 0 || empty($row[0])) continue;
+    
+            $employeeCode = trim($row[0]);
+            $name = trim($row[1]);
+            $mobile = trim($row[2]);
+            $designationName = trim($row[3]);
+            $branchName = trim($row[4]);
+    
+            $designation = Designation::where('designation', $designationName)->first();
+            $branch = Branch::where('branch_name', $branchName)->first();
+    
+            $validator = Validator::make([
+                'employee_code' => $employeeCode,
+                'name' => $name,
+                'mobile' => $mobile,
+                'designation' => $designation,
+                'branch' => $branch,
+            ], [
+                'employee_code' => 'required|string|unique:employees,employee_code',
+                'name' => 'required|string',
+                'mobile' => 'required|digits:10',
+                'designation' => 'required',
+                'branch' => 'required',
+            ]);
+    
+            if ($validator->fails()) {
+                $errors[] = [
+                    'row' => $index + 1,
+                    'errors' => $validator->errors(),
+                ];
+                continue;
+            }
+    
+            Employee::create([
+                'employee_code' => $employeeCode,
+                'name' => $name,
+                'mobile' => $mobile,
+                'status' => DEFAULT_STATUSES['active'],
+                'designation_id' => $designation->id,
+                'branch_id' => $branch->id,
+            ]);
+    
+            $imported++;
+        }
+    
+        return response()->json([
+            'success' => true,
+            'message' => "$imported employees imported successfully.",
+            'errors' => $errors,
+        ]);
+    }
+    
+
     public function updateEmployee(Request $request, $employee_id)
     {
         $request->validate([
@@ -135,7 +210,7 @@ class EmployeeController extends Controller
     public function getMinimalEmployees()
     {
         $employees = Employee::where('status', DEFAULT_STATUSES['active'])
-            ->get(['id', 'employee_code', 'name', 'designation'])
+            ->get(['id', 'employee_code', 'name'])
             ->map(function ($employee) {
                 return [
                     'id' => $employee->id,
@@ -172,18 +247,18 @@ class EmployeeController extends Controller
             }
 
             $employees = $branch->employees()
-            ->with('designation')
-            ->orderBy('employee_code', 'asc')
-            ->get()
-            ->map(function ($employee) use ($branch) {
-                return [
-                    'employee_code' => $employee->employee_code,
-                    'name' => $employee->name,
-                    'designation' => optional($employee->designation)->designation ?? 'N/A', // <-- fixed here
-                    'mobile' => $employee->mobile,
-                    'branch_code' => $branch->code,
-                ];
-            });
+                ->with('designation')
+                ->orderBy('employee_code', 'asc')
+                ->get()
+                ->map(function ($employee) use ($branch) {
+                    return [
+                        'employee_code' => $employee->employee_code,
+                        'name' => $employee->name,
+                        'designation' => optional($employee->designation)->designation ?? 'N/A',
+                        'mobile' => $employee->mobile,
+                        'branch_code' => $branch->code,
+                    ];
+                });
 
             return response()->json([
                 'success' => true,
