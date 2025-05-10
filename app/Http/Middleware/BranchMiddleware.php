@@ -10,6 +10,16 @@ class BranchMiddleware
 {
     public function handle(Request $request, Closure $next)
     {
+
+        try {
+            $tokenPayload = JWTAuth::parseToken()->getPayload();
+        } catch (JWTException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Token not provided or invalid.',
+            ], Response::HTTP_UNAUTHORIZED);
+        }
+        
         $user = $request->user();
         $tokenPayload = JWTAuth::parseToken()->getPayload();
 

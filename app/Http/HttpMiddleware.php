@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\BranchMiddleware;
+use Tymon\JWTAuth\Http\Middleware\Authenticate;
 
 class HttpMiddleware
 {
@@ -16,6 +17,7 @@ class HttpMiddleware
     ];
 
     protected $routeMiddleware = [
+        'jwt.auth' =>Authenticate::class,
         'admin' => AdminMiddleware::class,
         'branch' => BranchMiddleware::class,
     ];

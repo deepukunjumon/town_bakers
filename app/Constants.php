@@ -23,3 +23,11 @@ if (!defined('DEFAULT_STATUSES')) {
         'deleted' => -1,
     ]);
 }
+
+if (!defined('ORDER_STATUSES')) {
+    define('ORDER_STATUSES', [
+        'delivered' => 1,
+        'pending' => 0,
+        'cancelled' => -1,
+    ]);
+}
