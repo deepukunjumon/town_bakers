@@ -15,7 +15,7 @@ class Order extends Model
 
     protected $fillable = [
         'id', 'branch_id', 'employee_id', 'title', 'description', 'remarks',
-        'delivery_date', 'total_amount', 'advance_amount', 'payment_status', 'status', 'created_by',
+        'delivery_date', 'delivery_time', 'customer_name', 'customer_email', 'customer_mobile', 'total_amount', 'advance_amount', 'payment_status', 'status', 'deliverd_time', 'created_by',
     ];
 
     protected static function boot()

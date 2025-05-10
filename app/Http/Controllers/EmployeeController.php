@@ -193,6 +193,7 @@ class EmployeeController extends Controller
             ->get(['id', 'employee_code', 'name', 'designation', 'mobile'])
             ->map(function ($employee) use ($branch) {
                 return [
+                    'id' => $employee->id,
                     'employee_code' => $employee->employee_code,
                     'name' => $employee->name,
                     'designation' => $employee->designation,
@@ -252,6 +253,7 @@ class EmployeeController extends Controller
                 ->get()
                 ->map(function ($employee) use ($branch) {
                     return [
+                        'id' => $employee->id,
                         'employee_code' => $employee->employee_code,
                         'name' => $employee->name,
                         'designation' => optional($employee->designation)->designation ?? 'N/A',
