@@ -8,6 +8,7 @@ use App\Http\Controllers\ItemsController;
 use App\Http\Controllers\StockController;
 use App\Http\Controllers\DesignationController;
 use App\Http\Controllers\OrderController;
+use App\Http\Middleware\CheckPasswordResetMiddleware;
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\BranchMiddleware;
 use Illuminate\Support\Facades\Route;
@@ -15,8 +16,10 @@ use Illuminate\Support\Facades\Route;
 // Login route (public)
 Route::post('/login', [AuthController::class, 'login']);
 
+Route::middleware('auth:api')->post('/password/reset', [AuthController::class, 'resetPassword']);
+
 // Authenticated routes
-Route::middleware('jwt.auth')->group(function () {
+Route::middleware(['jwt.auth', 'check.password.reset'])->group(function () {
 
     // Logout
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -25,7 +28,7 @@ Route::middleware('jwt.auth')->group(function () {
     Route::prefix('admin')->middleware(AdminMiddleware::class)->group(function () {
         Route::get('/dashboard/stats', [DashboardController::class, 'getAdminDashboardStats']);
         Route::post('/create/branch', [BranchController::class, 'createBranch']);
-        Route::post('/create/employee   ', [EmployeeController::class, 'createEmployeeForAdmin']);
+        Route::post('/create/employee', [EmployeeController::class, 'createEmployeeForAdmin']);
         Route::post('/import/employees', [EmployeeController::class, 'importEmployees']);
         Route::put('/branch/{branch_id}', [BranchController::class, 'updateBranch']);
         Route::get('/branches', [BranchController::class, 'getBranches']);
