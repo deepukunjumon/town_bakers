@@ -13,6 +13,8 @@ class OrderSummaryResource extends JsonResource
             'id' => $this->id,
             'title' => $this->title,
             'delivery_date' => $this->delivery_date,
+            'delivery_time' => $this->delivery_time,
+            'delivered_date' => $this->delivered_date,
             'created_date' => $this->created_at->format('Y-m-d'),
             'status' => $this->status,
             'payment_status' => $this->payment_status,

@@ -12,46 +12,98 @@ class OrderController extends Controller
 {
     public function getOrdersForBranch(Request $request)
     {
+        $validator = Validator::make($request->all(), [
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date',
+            'page' => 'nullable|integer|min:1',
+            'per_page' => 'nullable|integer|min:1',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $startDate = $request->input('start_date') ?: now()->startOfMonth();
+        $endDate = $request->input('end_date') ?: now()->endOfMonth();
+        $page = $request->input('page', 1);
+        $perPage = $request->input('per_page', 10);
+
         $user = Auth::user();
         $branchId = $user->branch_id;
 
+        if (!$branchId) {
+            return response()->json(['success' => false, 'message' => 'Branch ID not found'], 404);
+        }
+
         $orders = Order::with(['employee'])
+            ->whereBetween('delivery_date', [$startDate, $endDate])
             ->where('branch_id', $branchId)
             ->orderBy('delivery_date', 'desc')
-            ->get();
+            ->paginate($perPage, ['*'], 'page', $page);
+
+        if ($orders->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No orders found for the given date range'
+            ]);
+        }
 
         $orders = OrderSummaryResource::collection($orders);
 
-        if (!$orders){
-            return response()->json([
-                'succes' => false,
-                'error' => 'Could not fetch order details'
-            ]);
-        }
-        
-        return response()->json(['succes' => true, 'order' => $orders]);
+        return response()->json([
+            'success' => true,
+            'message' => 'Orders fetched successfully',
+            'orders' => $orders,
+            'pagination' => [
+                'current_page' => $orders->currentPage(),
+                'last_page' => $orders->lastPage(),
+                'per_page' => $orders->perPage(),
+                'total' => $orders->total(),
+            ]
+        ]);
     }
 
-    public function getOrderDetails(Request $request, $id)
+    public function getOrderDetailsByID(Request $request, $id)
     {
+
+        $validator = Validator::make(
+            ['id' => $request->route('id')],
+            ['id' => 'required|uuid|exists:orders,id']
+        );
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
         $user = Auth::user();
         $branchId = $user->branch_id;
 
         $order = Order::with(['employee'])
-            ->where('branch_id', $branchId)
             ->where('id', $id)
             ->firstOrFail();
         
+        if ($order->branch_id !== $branchId) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+
+        if (!$order) {
+            return response()->json(['success' => false, 'message' => 'Order not found'], 404);
+        }
+
         $order_details = new OrderSummaryResource($order);
 
         if (!$order_details){
             return response()->json([
-                'succes' => false,
+                'success' => false,
                 'error' => 'Could not fetch order details'
             ]);
         }
         
-        return response()->json(['succes' => true, 'order' => $order_details]);
+        return response()->json([
+            'success' => true, 
+            'message' => 'Order details fetched successfully',
+            'order' => $order_details
+        ]);
     }
 
     public function getOrderDetailsByAdmin(Request $request, $id)
