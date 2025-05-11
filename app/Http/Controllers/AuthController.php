@@ -41,7 +41,8 @@ class AuthController extends Controller
             'token' => $token,
             'password_reset_required' => $passwordResetRequired,
             'user' => [
-                'id' => $user->id
+                'id' => $user->id,
+                'name' => $user->username ?? 'Unknown User',
             ]
         ]);
     }
