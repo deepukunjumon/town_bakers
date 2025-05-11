@@ -4,7 +4,10 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 
-require_once __DIR__ . '/../app/constants.php';
+$constantsPath = __DIR__ . '/../app/constants.php';
+if (file_exists($constantsPath)) {
+    require_once $constantsPath;
+}
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
