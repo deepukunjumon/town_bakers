@@ -18,7 +18,7 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Dompdf\Dompdf;
 
 
-class StockCOntroller extends Controller
+class StockController extends Controller
 {
     public function addStock(Request $request)
     {
