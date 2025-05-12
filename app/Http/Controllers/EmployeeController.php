@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Employee;
 use App\Models\Branch;
+use App\Models\Designations;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -106,7 +107,7 @@ class EmployeeController extends Controller
             $designationName = trim($row[3]);
             $branchName = trim($row[4]);
     
-            $designation = Designation::where('designation', $designationName)->first();
+            $designation = Designations::where('designation', $designationName)->first();
             $branch = Branch::where('branch_name', $branchName)->first();
     
             $validator = Validator::make([
@@ -180,7 +181,7 @@ class EmployeeController extends Controller
     }
 
 
-    public function getEmployeesByBranch($branch_id)
+    public function getEmployeesByBranch(Request $request, $branch_id)
     {
         $branch = Branch::find($branch_id);
 
@@ -188,23 +189,44 @@ class EmployeeController extends Controller
             return response()->json(['error' => 'Branch not found'], 404);
         }
 
-        $employees = $branch->employees()
-            ->orderBy('employee_code', 'asc')
-            ->get(['id', 'employee_code', 'name', 'designation', 'mobile'])
-            ->map(function ($employee) use ($branch) {
-                return [
-                    'id' => $employee->id,
-                    'employee_code' => $employee->employee_code,
-                    'name' => $employee->name,
-                    'designation' => $employee->designation,
-                    'mobile' => $employee->mobile,
-                    'branch_code' => $branch->code,
-                ];
+        $perPage = $request->input('per_page', 10); // Default to 10 items per page
+        $page = $request->input('page', 1); // Default to the first page
+        $search = $request->input('search', ''); // Default to an empty string for search
+
+        $query = $branch->employees()->orderBy('employee_code', 'asc');
+
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('employee_code', 'like', "%$search%")
+                ->orWhere('name', 'like', "%$search%")
+                ->orWhere('designation', 'like', "%$search%");
             });
+        }
+
+        $employees = $query->paginate($perPage, ['id', 'employee_code', 'name', 'designation', 'mobile']);
+
+        $employees->getCollection()->transform(function ($employee) use ($branch) {
+            return [
+                'id' => $employee->id,
+                'employee_code' => $employee->employee_code,
+                'name' => $employee->name,
+                'designation' => $employee->designation,
+                'mobile' => $employee->mobile,
+                'branch_code' => $branch->code,
+            ];
+        });
 
         return response()->json([
             'success' => true,
-            'employees' => $employees
+            'employees' => $employees->items(),
+            'pagination' => [
+                'total' => $employees->total(),
+                'per_page' => $employees->perPage(),
+                'current_page' => $employees->currentPage(),
+                'last_page' => $employees->lastPage(),
+                'from' => $employees->firstItem(),
+                'to' => $employees->lastItem(),
+            ],
         ]);
     }
 
@@ -226,7 +248,8 @@ class EmployeeController extends Controller
         ], 200);
     }
 
-    public function getEmployeesForAuthenticatedBranch()
+
+    public function getEmployeesForAuthenticatedBranch(Request $request)
     {
         try {
             $branchId = Auth::user()->branch_id;
@@ -247,24 +270,46 @@ class EmployeeController extends Controller
                 ], 404);
             }
 
-            $employees = $branch->employees()
-                ->with('designation')
-                ->orderBy('employee_code', 'asc')
-                ->get()
-                ->map(function ($employee) use ($branch) {
-                    return [
-                        'id' => $employee->id,
-                        'employee_code' => $employee->employee_code,
-                        'name' => $employee->name,
-                        'designation' => optional($employee->designation)->designation ?? 'N/A',
-                        'mobile' => $employee->mobile,
-                        'branch_code' => $branch->code,
-                    ];
+            $perPage = $request->input('per_page', 10);
+            $page = $request->input('page', 1);
+            $search = $request->input('search', '');
+
+            $query = $branch->employees()->with('designation')->orderBy('employee_code', 'asc');
+
+            if ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('employee_code', 'like', "%$search%")
+                    ->orWhere('name', 'like', "%$search%")
+                    ->orWhereHas('designation', function ($q) use ($search) {
+                        $q->where('designation', 'like', "%$search%");
+                    });
                 });
+            }
+
+            $employees = $query->paginate($perPage, ['id', 'employee_code', 'name', 'designation_id', 'mobile']);
+
+            $employees->getCollection()->transform(function ($employee) use ($branch) {
+                return [
+                    'id' => $employee->id,
+                    'employee_code' => $employee->employee_code,
+                    'name' => $employee->name,
+                    'designation' => optional($employee->designation)->designation ?? 'N/A',
+                    'mobile' => $employee->mobile,
+                    'branch_code' => $branch->code,
+                ];
+            });
 
             return response()->json([
                 'success' => true,
-                'employees' => $employees
+                'employees' => $employees->items(),
+                'pagination' => [
+                    'total' => $employees->total(),
+                    'per_page' => $employees->perPage(),
+                    'current_page' => $employees->currentPage(),
+                    'last_page' => $employees->lastPage(),
+                    'from' => $employees->firstItem(),
+                    'to' => $employees->lastItem(),
+                ],
             ]);
         } catch (\Exception $e) {
             return response()->json([

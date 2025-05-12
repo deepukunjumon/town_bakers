@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use App\Models\Order;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
@@ -10,13 +11,20 @@ use App\Http\Resources\OrderSummaryResource;
 
 class OrderController extends Controller
 {
-    public function getOrdersForBranch(Request $request)
+    /**
+     * List orders of logged in branch
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function getOrdersForBranch(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date',
             'page' => 'nullable|integer|min:1',
             'per_page' => 'nullable|integer|min:1',
+            'search' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
@@ -27,6 +35,7 @@ class OrderController extends Controller
         $endDate = $request->input('end_date') ?: now()->endOfMonth();
         $page = $request->input('page', 1);
         $perPage = $request->input('per_page', 10);
+        $search = $request->input('search', '');
 
         $user = Auth::user();
         $branchId = $user->branch_id;
@@ -35,10 +44,20 @@ class OrderController extends Controller
             return response()->json(['success' => false, 'message' => 'Branch ID not found'], 404);
         }
 
-        $orders = Order::with(['employee'])
-            ->whereBetween('delivery_date', [$startDate, $endDate])
+        $ordersQuery = Order::with(['employee'])
             ->where('branch_id', $branchId)
-            ->orderBy('delivery_date', 'desc')
+            ->whereBetween('delivery_date', [$startDate, $endDate]);
+
+        if ($search) {
+            $ordersQuery->where(function ($query) use ($search) {
+                $query->where('title', 'like', '%' . $search . '%')
+                    ->orWhere('customer_name', 'like', '%' . $search . '%')
+                    ->orWhere('customer_email', 'like', '%' . $search . '%')
+                    ->orWhere('customer_mobile', 'like', '%' . $search . '%');
+            });
+        }
+
+        $orders = $ordersQuery->orderBy('delivery_date', 'desc')
             ->paginate($perPage, ['*'], 'page', $page);
 
         if ($orders->isEmpty()) {
@@ -63,7 +82,14 @@ class OrderController extends Controller
         ]);
     }
 
-    public function getOrderDetailsByID(Request $request, $id)
+    /**
+     * Order details from order id
+     * 
+     * @param Request $request
+     * @param mixed $id
+     * @return JsonResponse
+     */
+    public function getOrderDetailsByID(Request $request, $id): JsonResponse
     {
 
         $validator = Validator::make(
@@ -115,7 +141,13 @@ class OrderController extends Controller
         return response()->json(['order' => $order]);
     }
 
-    public function createOrder(Request $request)
+    /**
+     * Create order from branch
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function createOrder(Request $request): JsonResponse
     {
         $user = Auth::user();
 
@@ -164,7 +196,15 @@ class OrderController extends Controller
         ]);
     }
 
-    public function updateOrderStatus(Request $request, $id)
+    /**
+     * Updates order status
+     * 
+     * @param Request $request
+     * @param mixed $id
+     * 
+     * @return JsonResponse
+     */
+    public function updateOrderStatus(Request $request, $id): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'status' => 'required|in:-1,0,1'
