@@ -57,7 +57,7 @@ class OrderController extends Controller
             });
         }
 
-        $orders = $ordersQuery->orderBy('delivery_date', 'desc')
+        $orders = $ordersQuery->orderBy('delivery_date', 'asc')
             ->paginate($perPage, ['*'], 'page', $page);
 
         if ($orders->isEmpty()) {
