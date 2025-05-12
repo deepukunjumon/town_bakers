@@ -13,6 +13,10 @@ use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\BranchMiddleware;
 use Illuminate\Support\Facades\Route;
 
+Route::get('/ping', function () {
+    return response()->json(['message' => 'pong']);
+});
+
 // Login route (public)
 Route::post('/login', [AuthController::class, 'login']);
 
