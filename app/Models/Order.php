@@ -18,6 +18,10 @@ class Order extends Model
         'delivery_date', 'delivery_time', 'customer_name', 'customer_email', 'customer_mobile', 'total_amount', 'advance_amount', 'payment_status', 'status', 'deliverd_time', 'created_by',
     ];
 
+    protected $casts = [
+        'delivered_at' => 'datetime',
+    ];
+
     protected static function boot()
     {
         parent::boot();
@@ -38,5 +42,10 @@ class Order extends Model
 
     public function creator() {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function deliveredByEmployee()
+    {
+        return $this->belongsTo(Employee::class, 'delivered_by');
     }
 }
