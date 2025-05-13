@@ -51,7 +51,7 @@ class AuthController extends Controller
      * Handle password reset.
      *
      * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
+     * @return JsonResponse
      */
 
     public function resetPassword(Request $request)

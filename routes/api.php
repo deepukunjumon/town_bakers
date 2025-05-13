@@ -72,5 +72,5 @@ Route::middleware(['jwt.auth', 'check.password.reset'])->group(function () {
     Route::get('/stock/trip/{trip_id}', [StockController::class, 'getTripDetails']);
     Route::post('/stocks/summary', [StockController::class, 'getItemsByDate']);
     
-    Route::put('/orders/{id}/status', [OrderController::class, 'updateOrderStatus']);
+    Route::put('/order/{id}/status', [OrderController::class, 'updateOrderStatus']);
 });
