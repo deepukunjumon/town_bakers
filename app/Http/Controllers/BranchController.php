@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\DB;
 
 class BranchController extends Controller
 {
@@ -27,29 +28,46 @@ class BranchController extends Controller
             ], 422);
         }
 
-        // Create the branch
-        $branch = Branch::create([
-            'code' => $request->code,
-            'name' => $request->name,
-            'address' => $request->address,
-            'mobile' => $request->mobile,
-            'phone' => $request->phone,
-            'status' => DEFAULT_STATUSES['active'],
-        ]);
+        DB::beginTransaction();
+        try {
+            // Create the branch
+            $branch = Branch::create([
+                'code' => $request->code,
+                'name' => $request->name,
+                'address' => $request->address,
+                'mobile' => $request->mobile,
+                'phone' => $request->phone,
+                'email' => $request->email,
+                'status' => DEFAULT_STATUSES['active'],
+            ]);
 
-        $username = DEFAULT_USERNAME_PREFIX . strtoupper($request->code);
-        // Create a user for the branch
-        $user = User::create([
-            'username' => $username,
-            'password' => Hash::make(DEFAULT_PASSWORD),
-            'branch_id' => $branch->id,
-            'is_admin' => false
-        ]);
+            $username = DEFAULT_USERNAME_PREFIX . strtoupper(str_replace(' ', '_', $request->code));
+            $username = preg_replace('/[^A-Za-z0-9_]/', '', $username);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Branch created successfully',
-        ], 201);
+            // Create a user for the branch
+            $user = User::create([
+                'username' => $username,
+                'mobile' => $branch->mobile,
+                'email' => $branch->email,
+                'password' => Hash::make(DEFAULT_PASSWORD),
+                'branch_id' => $branch->id,
+                'is_admin' => false
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Branch created successfully',
+            ], 201);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Branch creation failed',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 
     public function updateBranch(Request $request, $branch_id)
@@ -71,8 +89,6 @@ class BranchController extends Controller
     {
         return response()->json(Branch::all());
     }
-
-
 
     public function getMinimalBranches()
     {

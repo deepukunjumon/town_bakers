@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\UserController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmployeeController;
@@ -24,6 +25,8 @@ Route::middleware('auth:api')->post('/password/reset', [AuthController::class, '
 
 // Authenticated routes
 Route::middleware(['jwt.auth', 'check.password.reset'])->group(function () {
+
+    Route::get('/profile', [UserController::class, 'profile']);
 
     // Logout
     Route::post('/logout', [AuthController::class, 'logout']);
