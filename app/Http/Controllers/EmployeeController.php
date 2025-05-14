@@ -7,13 +7,19 @@ use App\Models\Branch;
 use App\Models\Designations;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
 
 class EmployeeController extends Controller
 {
-    // Add a new employee
-    public function createEmployeeForAdmin(Request $request)
+    /**
+     * Create a new employee by admin.
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function createEmployeeForAdmin(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'employee_code' => 'required|string|unique:employees,employee_code',
@@ -45,7 +51,13 @@ class EmployeeController extends Controller
         ], 201);
     }
 
-    public function createEmployeeForBranch(Request $request)
+    /**
+     * Create a new employee by the authenticated branch.
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function createEmployeeForBranch(Request $request): JsonResponse
     {
         $branchId = Auth::user()->branch_id;
 
@@ -78,38 +90,44 @@ class EmployeeController extends Controller
         ], 201);
     }
 
-    public function importEmployees(Request $request)
+    /**
+     * Import employees from an Excel file.
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function importEmployees(Request $request): JsonResponse
     {
         $fileValidate = Validator::make($request->all(), [
             'file' => 'required|file|mimes:xlsx,csv',
         ]);
-    
+
         if ($fileValidate->fails()) {
             return response()->json([
                 'success' => false,
                 'errors' => $fileValidate->errors(),
             ], 422);
         }
-    
+
         $file = $request->file('file');
         $data = Excel::toArray([], $file);
         $rows = $data[0];
-    
+
         $errors = [];
         $imported = 0;
-    
+
         foreach ($rows as $index => $row) {
             if ($index === 0 || empty($row[0])) continue;
-    
+
             $employeeCode = trim($row[0]);
             $name = trim($row[1]);
             $mobile = trim($row[2]);
             $designationName = trim($row[3]);
             $branchName = trim($row[4]);
-    
+
             $designation = Designations::where('designation', $designationName)->first();
             $branch = Branch::where('branch_name', $branchName)->first();
-    
+
             $validator = Validator::make([
                 'employee_code' => $employeeCode,
                 'name' => $name,
@@ -123,7 +141,7 @@ class EmployeeController extends Controller
                 'designation' => 'required',
                 'branch' => 'required',
             ]);
-    
+
             if ($validator->fails()) {
                 $errors[] = [
                     'row' => $index + 1,
@@ -131,7 +149,7 @@ class EmployeeController extends Controller
                 ];
                 continue;
             }
-    
+
             Employee::create([
                 'employee_code' => $employeeCode,
                 'name' => $name,
@@ -140,19 +158,26 @@ class EmployeeController extends Controller
                 'designation_id' => $designation->id,
                 'branch_id' => $branch->id,
             ]);
-    
+
             $imported++;
         }
-    
+
         return response()->json([
             'success' => true,
             'message' => "$imported employees imported successfully.",
             'errors' => $errors,
         ]);
     }
-    
 
-    public function updateEmployee(Request $request, $employee_id)
+
+    /**
+     * Update employee details.
+     *
+     * @param Request $request
+     * @param string $employee_id
+     * @return JsonResponse
+     */
+    public function updateEmployee(Request $request, $employee_id): JsonResponse
     {
         $request->validate([
             'name' => 'sometimes|string',
@@ -181,7 +206,14 @@ class EmployeeController extends Controller
     }
 
 
-    public function getEmployeesByBranch(Request $request, $branch_id)
+    /**
+     * Get employees by branch ID.
+     *
+     * @param Request $request
+     * @param string $branch_id
+     * @return JsonResponse
+     */
+    public function getEmployeesByBranch(Request $request, $branch_id): JsonResponse
     {
         $branch = Branch::find($branch_id);
 
@@ -189,17 +221,17 @@ class EmployeeController extends Controller
             return response()->json(['error' => 'Branch not found'], 404);
         }
 
-        $perPage = $request->input('per_page', 10); // Default to 10 items per page
-        $page = $request->input('page', 1); // Default to the first page
-        $search = $request->input('search', ''); // Default to an empty string for search
+        $perPage = $request->input('per_page', 10);
+        $page = $request->input('page', 1);
+        $search = $request->input('search', '');
 
         $query = $branch->employees()->orderBy('employee_code', 'asc');
 
         if ($search) {
             $query->where(function ($q) use ($search) {
                 $q->where('employee_code', 'like', "%$search%")
-                ->orWhere('name', 'like', "%$search%")
-                ->orWhere('designation', 'like', "%$search%");
+                    ->orWhere('name', 'like', "%$search%")
+                    ->orWhere('designation', 'like', "%$search%");
             });
         }
 
@@ -230,7 +262,12 @@ class EmployeeController extends Controller
         ]);
     }
 
-    public function getMinimalEmployees()
+    /**
+     * Get minimal employee details.
+     *
+     * @return JsonResponse
+     */
+    public function getMinimalEmployees(): JsonResponse
     {
         $employees = Employee::where('status', DEFAULT_STATUSES['active'])
             ->get(['id', 'employee_code', 'name'])
@@ -249,7 +286,13 @@ class EmployeeController extends Controller
     }
 
 
-    public function getEmployeesForAuthenticatedBranch(Request $request)
+    /**
+     * Get employees under the authenticated branch.
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function getEmployeesForAuthenticatedBranch(Request $request): JsonResponse
     {
         try {
             $branchId = Auth::user()->branch_id;
@@ -279,14 +322,14 @@ class EmployeeController extends Controller
             if ($search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('employee_code', 'like', "%$search%")
-                    ->orWhere('name', 'like', "%$search%")
-                    ->orWhereHas('designation', function ($q) use ($search) {
-                        $q->where('designation', 'like', "%$search%");
-                    });
+                        ->orWhere('name', 'like', "%$search%")
+                        ->orWhereHas('designation', function ($q) use ($search) {
+                            $q->where('designation', 'like', "%$search%");
+                        });
                 });
             }
 
-            $employees = $query->paginate($perPage, ['id', 'employee_code', 'name', 'designation_id', 'mobile']);
+            $employees = $query->paginate($perPage, ['id', 'employee_code', 'name', 'designation_id', 'mobile', 'status'], 'page', $page);
 
             $employees->getCollection()->transform(function ($employee) use ($branch) {
                 return [
@@ -296,6 +339,7 @@ class EmployeeController extends Controller
                     'designation' => optional($employee->designation)->designation ?? 'N/A',
                     'mobile' => $employee->mobile,
                     'branch_code' => $branch->code,
+                    'status' => $employee->status,
                 ];
             });
 

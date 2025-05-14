@@ -22,6 +22,7 @@ class Branch extends Authenticatable implements JWTSubject
         'name',
         'address',
         'mobile',
+        'email',
         'phone',
         'status'
     ];

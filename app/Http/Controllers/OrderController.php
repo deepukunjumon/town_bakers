@@ -61,7 +61,7 @@ class OrderController extends Controller
             ->when($status !== null, function ($query) use ($status) {
                 return $query->where('status', $status);
             })
-            ->when($paymentStatus, function ($query) use ($paymentStatus) {
+            ->when($paymentStatus !== null, function ($query) use ($paymentStatus) {
                 return $query->where('payment_status', $paymentStatus);
             })
             ->when($deliveryDate, function ($query) use ($deliveryDate) {
