@@ -2,14 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use Carbon\Carbon;
 use App\Models\Trip;
 use App\Models\StockItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use App\Exports\ItemQuantityExport;
-use Maatwebsite\Excel\Facades\Excel;
-use App\Models\Branch;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -77,6 +74,8 @@ class StockController extends Controller
             'date' => 'required|date',
             'export' => 'sometimes|boolean',
             'type' => 'required_if:export,true|in:excel,pdf',
+            'per_page' => 'nullable|integer|min:1',
+            'page' => 'nullable|integer|min:1',
         ]);
 
         if ($validator->fails()) {
@@ -86,6 +85,8 @@ class StockController extends Controller
             ], 422);
         }
 
+        $perPage = $request->input('per_page', 10); // Default to 10 items per page
+        $page = $request->input('page', 1); // Default to the first page
         $date = Carbon::parse($request->date);
         $branchId = Auth::user()->branch_id;
 
@@ -93,6 +94,7 @@ class StockController extends Controller
         $branch_name = $branch ? $branch->name : 'Unknown Branch';
         $branch_code = $branch ? $branch->code : 'Unknown Branch Code';
 
+        // Use paginate for paginated results
         $items = DB::table('stock_items')
             ->join('items', 'stock_items.item_id', '=', 'items.id')
             ->join('trips', 'stock_items.trip_id', '=', 'trips.id')
@@ -100,7 +102,7 @@ class StockController extends Controller
             ->where('trips.branch_id', $branchId)
             ->select('items.name as item_name', DB::raw('SUM(stock_items.quantity) as total_quantity'))
             ->groupBy('items.name')
-            ->get();
+            ->paginate($perPage, ['*'], 'page', $page);
 
         // Check if export is requested
         if ($request->boolean('export')) {
@@ -125,7 +127,7 @@ class StockController extends Controller
                 $sheet->getStyle('A4:B4')->getFont()->setBold(true);
 
                 $row = 5;
-                foreach ($items as $item) {
+                foreach ($items->items() as $item) {
                     $sheet->setCellValue('A' . $row, $item->item_name);
                     $sheet->setCellValue('B' . $row, $item->total_quantity);
                     $row++;
@@ -133,7 +135,7 @@ class StockController extends Controller
 
                 if (ob_get_length()) ob_end_clean();
 
-                $filename = 'Stock_Summary_'. $branch_code . '_' . $date->format('Y-m-d') . '.xlsx';
+                $filename = 'Stock_Summary_' . $branch_code . '_' . $date->format('Y-m-d') . '.xlsx';
                 header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
                 header("Content-Disposition: attachment; filename=\"$filename\"");
                 header('Cache-Control: max-age=0');
@@ -147,8 +149,6 @@ class StockController extends Controller
                 if (ob_get_length()) ob_end_clean();
 
                 $safeBranch = htmlentities($branch_name, ENT_QUOTES, 'UTF-8');
-                $safeAddress = htmlentities($branch->address ?? 'N/A', ENT_QUOTES, 'UTF-8');
-                $safeMobile = htmlentities($branch->mobile ?? 'N/A', ENT_QUOTES, 'UTF-8');
                 $safeDate = $date->format('d-m-Y');
 
                 $html = '
@@ -156,75 +156,41 @@ class StockController extends Controller
                 <head>
                     <meta charset="UTF-8">
                     <style>
-                        @page {
-                            margin: 30px;
-                        }
-            
-                        body {
-                            font-family: sans-serif;
-                            margin: 0;
-                            padding: 0;
-                        }
-            
+                        @page { margin: 30px; }
+                        body { font-family: sans-serif; margin: 0; padding: 0; }
                         .page-border {
                             position: absolute;
-                            top: 15px;
-                            left: 15px;
-                            right: 15px;
-                            bottom: 15px;
-                            border: 2px solid #000;
-                            padding: 20px;
-                            box-sizing: border-box;
+                            top: 15px; left: 15px; right: 15px; bottom: 15px;
+                            border: 2px solid #000; padding: 20px; box-sizing: border-box;
                         }
-            
-                        h3, p {
-                            margin: 5px 0;
-                            text-align: center;
-                        }
-            
-                        .text-right {
-                            text-align: right;
-                            margin-top: 15px;
-                            margin-bottom: 10px;
-                        }
-            
+                        h3, p { margin: 5px 0; text-align: center; }
                         table {
-                            width: 100%;
-                            border-collapse: collapse;
-                            margin-top: 10px;
+                            width: 100%; border-collapse: collapse; margin-top: 10px;
                         }
-            
                         th, td {
                             border: 1px solid #000;
                             padding: 6px;
                             font-size: 12px;
                             text-align: center;
                         }
-            
-                        thead {
-                            display: table-header-group;
-                        }
                     </style>
                 </head>
                 <body>
                     <div class="page-border">
                         <h3>' . $safeBranch . '</h3>
-                        <p>' . $safeAddress . '</p>
-                        <p>Contact: ' . $safeMobile . '</p>
                         <p class="text-right"><strong>Date: ' . $safeDate . '</strong></p>
-            
                         <table>
                             <thead>
                                 <tr>
-                                    <th style="width: 8%;">Sl.No</th>
+                                    <th>Sl.No</th>
                                     <th>Item Name</th>
-                                    <th style="width: 20%;">Total Quantity</th>
+                                    <th>Total Quantity</th>
                                 </tr>
                             </thead>
                             <tbody>';
 
                 $i = 1;
-                foreach ($items as $item) {
+                foreach ($items->items() as $item) {
                     $itemName = htmlentities($item->item_name, ENT_QUOTES, 'UTF-8');
                     $html .= '<tr>
                                 <td>' . $i++ . '</td>
@@ -256,7 +222,13 @@ class StockController extends Controller
             'success' => true,
             'message' => 'Fetched stock summary',
             'date' => $date->format('d-m-Y'),
-            'data' => $items
+            'data' => $items->items(),
+            'pagination' => [
+                'current_page' => $items->currentPage(),
+                'last_page' => $items->lastPage(),
+                'per_page' => $items->perPage(),
+                'total' => $items->total(),
+            ],
         ]);
     }
 
@@ -264,6 +236,8 @@ class StockController extends Controller
     {
         if ($request->has('export')) {
             $request->merge([
+                'page' => 'nullable|integer|min:1',
+                'per_page' => 'nullable|integer|min:1',
                 'export' => filter_var($request->input('export'), FILTER_VALIDATE_BOOLEAN),
             ]);
         }
@@ -282,6 +256,9 @@ class StockController extends Controller
             ], 422);
         }
 
+        $page = $request->input('page', 1);
+        $perPage = $request->input('per_page', 10);
+
         $branch_id = $request->branch_id;
         $date = Carbon::parse($request->date);
         $branch = DB::table('branches')->where('id', $branch_id)->first();
@@ -299,7 +276,7 @@ class StockController extends Controller
                 DB::raw('SUM(stock_items.quantity) as total_quantity')
             )
             ->groupBy('stock_items.item_id', 'items.name')
-            ->get();
+            ->paginate($perPage, ['*'], 'page', $page);
 
         if ($request->boolean('export')) {
             $type = $request->input('type');
@@ -440,7 +417,13 @@ class StockController extends Controller
         return response()->json([
             'success' => true,
             'date' => $date->format('d-m-Y'),
-            'data' => $formattedData
+            'data' => $formattedData,
+            'pagination' => [
+                'current_page' => $items->currentPage(),
+                'last_page' => $items->lastPage(),
+                'per_page' => $items->perPage(),
+                'total' => $items->total(),
+            ],
         ]);
     }
 }

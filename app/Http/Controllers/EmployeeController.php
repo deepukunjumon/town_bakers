@@ -7,12 +7,12 @@ use App\Models\Branch;
 use App\Models\Designations;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
 
 class EmployeeController extends Controller
 {
-    // Add a new employee
     public function createEmployeeForAdmin(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -83,33 +83,33 @@ class EmployeeController extends Controller
         $fileValidate = Validator::make($request->all(), [
             'file' => 'required|file|mimes:xlsx,csv',
         ]);
-    
+
         if ($fileValidate->fails()) {
             return response()->json([
                 'success' => false,
                 'errors' => $fileValidate->errors(),
             ], 422);
         }
-    
+
         $file = $request->file('file');
         $data = Excel::toArray([], $file);
         $rows = $data[0];
-    
+
         $errors = [];
         $imported = 0;
-    
+
         foreach ($rows as $index => $row) {
             if ($index === 0 || empty($row[0])) continue;
-    
+
             $employeeCode = trim($row[0]);
             $name = trim($row[1]);
             $mobile = trim($row[2]);
             $designationName = trim($row[3]);
             $branchName = trim($row[4]);
-    
+
             $designation = Designations::where('designation', $designationName)->first();
             $branch = Branch::where('branch_name', $branchName)->first();
-    
+
             $validator = Validator::make([
                 'employee_code' => $employeeCode,
                 'name' => $name,
@@ -123,7 +123,7 @@ class EmployeeController extends Controller
                 'designation' => 'required',
                 'branch' => 'required',
             ]);
-    
+
             if ($validator->fails()) {
                 $errors[] = [
                     'row' => $index + 1,
@@ -131,7 +131,7 @@ class EmployeeController extends Controller
                 ];
                 continue;
             }
-    
+
             Employee::create([
                 'employee_code' => $employeeCode,
                 'name' => $name,
@@ -140,17 +140,17 @@ class EmployeeController extends Controller
                 'designation_id' => $designation->id,
                 'branch_id' => $branch->id,
             ]);
-    
+
             $imported++;
         }
-    
+
         return response()->json([
             'success' => true,
             'message' => "$imported employees imported successfully.",
             'errors' => $errors,
         ]);
     }
-    
+
 
     public function updateEmployee(Request $request, $employee_id)
     {
@@ -189,17 +189,17 @@ class EmployeeController extends Controller
             return response()->json(['error' => 'Branch not found'], 404);
         }
 
-        $perPage = $request->input('per_page', 10); // Default to 10 items per page
-        $page = $request->input('page', 1); // Default to the first page
-        $search = $request->input('search', ''); // Default to an empty string for search
+        $perPage = $request->input('per_page', 10);
+        $page = $request->input('page', 1);
+        $search = $request->input('search', '');
 
         $query = $branch->employees()->orderBy('employee_code', 'asc');
 
         if ($search) {
             $query->where(function ($q) use ($search) {
                 $q->where('employee_code', 'like', "%$search%")
-                ->orWhere('name', 'like', "%$search%")
-                ->orWhere('designation', 'like', "%$search%");
+                    ->orWhere('name', 'like', "%$search%")
+                    ->orWhere('designation', 'like', "%$search%");
             });
         }
 
@@ -249,7 +249,7 @@ class EmployeeController extends Controller
     }
 
 
-    public function getEmployeesForAuthenticatedBranch(Request $request)
+    public function getEmployeesForAuthenticatedBranch(Request $request): JsonResponse
     {
         try {
             $branchId = Auth::user()->branch_id;
@@ -279,14 +279,14 @@ class EmployeeController extends Controller
             if ($search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('employee_code', 'like', "%$search%")
-                    ->orWhere('name', 'like', "%$search%")
-                    ->orWhereHas('designation', function ($q) use ($search) {
-                        $q->where('designation', 'like', "%$search%");
-                    });
+                        ->orWhere('name', 'like', "%$search%")
+                        ->orWhereHas('designation', function ($q) use ($search) {
+                            $q->where('designation', 'like', "%$search%");
+                        });
                 });
             }
 
-            $employees = $query->paginate($perPage, ['id', 'employee_code', 'name', 'designation_id', 'mobile']);
+            $employees = $query->paginate($perPage, ['id', 'employee_code', 'name', 'designation_id', 'mobile'], 'page', $page);
 
             $employees->getCollection()->transform(function ($employee) use ($branch) {
                 return [
