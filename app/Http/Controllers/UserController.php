@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
+use Symfony\Component\HttpFoundation\Response;
 
 class UserController extends Controller
 {
@@ -16,7 +17,7 @@ class UserController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
-    public function profile(Request $request)
+    public function profile(Request $request): JsonResponse
     {
         $user = Auth::user();
 
@@ -25,13 +26,16 @@ class UserController extends Controller
         }
 
         if ($user->is_admin) {
-                }
+        }
         return response()->json([
-            'name' => $user->username ?? 'Unknown User',
-            'mobile' => $user->mobile,
-            'email' => $user->email,
-            'is_admin' => $user->is_admin,
-            'user_since' => $user->created_at->format('Y-m-d'),
+            'success' => true,
+            'user_details' => [
+                'name' => $user->username ?? 'Unknown User',
+                'mobile' => $user->mobile,
+                'email' => $user->email,
+                'is_admin' => $user->is_admin,
+                'user_since' => $user->created_at != null ? $user->created_at->format('Y-m-d') : ""
+            ]
         ]);
     }
 }

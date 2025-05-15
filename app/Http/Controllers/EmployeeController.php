@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
-use Maatwebsite\Excel\Facades\Excel;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class EmployeeController extends Controller
 {
@@ -110,8 +110,9 @@ class EmployeeController extends Controller
         }
 
         $file = $request->file('file');
-        $data = Excel::toArray([], $file);
-        $rows = $data[0];
+        $spreadsheet = IOFactory::load($file->getPathname());
+        $sheet = $spreadsheet->getActiveSheet();
+        $rows = $sheet->toArray();
 
         $errors = [];
         $imported = 0;
@@ -123,23 +124,23 @@ class EmployeeController extends Controller
             $name = trim($row[1]);
             $mobile = trim($row[2]);
             $designationName = trim($row[3]);
-            $branchName = trim($row[4]);
+            $branchCode = trim($row[4]);
 
             $designation = Designations::where('designation', $designationName)->first();
-            $branch = Branch::where('branch_name', $branchName)->first();
+            $branch = Branch::where('code', $branchCode)->first();
 
             $validator = Validator::make([
                 'employee_code' => $employeeCode,
                 'name' => $name,
                 'mobile' => $mobile,
-                'designation' => $designation,
-                'branch' => $branch,
+                'designation_id' => $designation ? $designation->id : null,
+                'branch_id' => $branch ? $branch->id : null,
             ], [
                 'employee_code' => 'required|string|unique:employees,employee_code',
                 'name' => 'required|string',
                 'mobile' => 'required|digits:10',
-                'designation' => 'required',
-                'branch' => 'required',
+                'designation_id' => 'required|exists:designations,id',
+                'branch_id' => 'required|exists:branches,id',
             ]);
 
             if ($validator->fails()) {
@@ -168,7 +169,6 @@ class EmployeeController extends Controller
             'errors' => $errors,
         ]);
     }
-
 
     /**
      * Update employee details.
@@ -204,7 +204,6 @@ class EmployeeController extends Controller
             'message' => 'Employee details updated successfully',
         ], 200);
     }
-
 
     /**
      * Get employees by branch ID.
@@ -284,7 +283,6 @@ class EmployeeController extends Controller
             'employees' => $employees
         ], 200);
     }
-
 
     /**
      * Get employees under the authenticated branch.
