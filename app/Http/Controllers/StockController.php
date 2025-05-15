@@ -197,7 +197,7 @@ class StockController extends Controller
             $columns = ['Sl. No', 'Item Name', 'Total Quantity'];
             $exportItems = [];
             $i = 1;
-            foreach ($items as $item) {
+            foreach ($items->items() as $item) {
                 $exportItems[] = [$i++, $item->item_name, $item->total_quantity];
             }
 
@@ -209,7 +209,6 @@ class StockController extends Controller
             }
         }
 
-        // JSON fallback if not exporting
         $formattedData = [
             [
                 'branch_id' => $branch_id,

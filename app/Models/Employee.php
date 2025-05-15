@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 use App\Models\Designations;
+use App\Models\Branch;
 
 class Employee extends Model
 {
@@ -20,6 +21,11 @@ class Employee extends Model
         'status',
         'branch_id'
     ];
+
+    public function branch()
+    {
+        return $this->belongsTo(Branch::class, 'branch_id');
+    }
 
     public function designation()
     {

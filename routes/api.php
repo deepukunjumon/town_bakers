@@ -41,6 +41,7 @@ Route::middleware(['jwt.auth', 'check.password.reset'])->group(function () {
         Route::get('/branches', [BranchController::class, 'getAllBranches']);
         Route::put('/branch/{branch_id}', [BranchController::class, 'updateBranch']);
 
+        Route::get('/all-employees', [EmployeeController::class, 'getAllEmployees']);
         Route::put('/employee/{employee_id}', [EmployeeController::class, 'updateEmployee']);
         Route::get('/employees/{branch_id}', [EmployeeController::class, 'getEmployeesByBranch']);
 
