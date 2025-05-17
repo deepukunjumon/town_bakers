@@ -1,0 +1,29 @@
+name: Deploy to AWS Server
+
+on:
+push:
+branches:
+\- main
+
+jobs:
+deploy:
+runs-on: ubuntu-latest
+
+```
+steps:
+  - name: Checkout code
+    uses: actions/checkout@v3
+
+  - name: Deploy via SSH
+    uses: appleboy/ssh-action@v0.1.6
+    with:
+      host: 52.204.98.211
+      username: ubuntu
+      key: ${{ secrets.AWS_SSH_KEY }}
+      script: |
+        cd /var/www/html/tbms_api
+        git pull origin main
+        composer install --no-interaction --prefer-dist --optimize-autoloader
+        php artisan migrate --force
+        sudo systemctl restart apache2
+```
