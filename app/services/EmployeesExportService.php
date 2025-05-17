@@ -57,13 +57,15 @@ class EmployeesExportService
 
     public static function exportPdf($employees, $branch_name, $branch_code, $branch_address, $date, $columns, $extra = [])
     {
-        if (ob_get_length()) ob_end_clean();
-
+        if (ob_get_length()) {
+            ob_end_clean();
+        }
+    
         $safeBranch = htmlentities($branch_name, ENT_QUOTES, 'UTF-8');
         $safeBranchCode = htmlentities($branch_code, ENT_QUOTES, 'UTF-8');
         $safeBranchAddress = htmlentities($branch_address, ENT_QUOTES, 'UTF-8');
         $safeDate = $date->format('d-m-Y');
-
+    
         $html = '
         <html>
         <head>
@@ -72,22 +74,37 @@ class EmployeesExportService
                 @page { margin: 30px; }
                 body { font-family: sans-serif; margin: 0; padding: 0; }
                 .page-border {
-                    position: absolute;
-                    top: 15px; left: 15px; right: 15px; bottom: 15px;
-                    border: 2px solid #000; padding: 20px; box-sizing: border-box;
+                    border: 2px solid #000;
+                    padding: 20px;
+                    box-sizing: border-box;
+                    margin: 15px;
                 }
                 h3, h4, p { margin: 5px 0; text-align: center; }
                 .text-right { text-align: right; margin-top: 15px; margin-bottom: 10px; }
                 table {
                     width: 100%; border-collapse: collapse; margin-top: 10px;
+                    page-break-inside: auto;
+                }
+                thead {
+                    display: table-header-group;
+                }
+                tfoot {
+                    display: table-footer-group;
+                }
+                tbody {
+                    page-break-inside: auto;
+                }
+                tr {
+                    page-break-inside: avoid;
+                    page-break-after: auto;
                 }
                 th, td {
                     border: 1px solid #000;
                     padding: 6px;
                     font-size: 12px;
                     text-align: center;
+                    vertical-align: middle;
                 }
-                thead { display: table-header-group; }
             </style>
         </head>
         <body>
@@ -109,16 +126,16 @@ class EmployeesExportService
                     </colgroup>
                     <thead>
                         <tr>';
-        
+
 
         foreach ($columns as $header) {
             $html .= '<th>' . htmlentities($header, ENT_QUOTES, 'UTF-8') . '</th>';
         }
-
+    
         $html .= '</tr>
                     </thead>
                     <tbody>';
-
+    
         foreach ($employees as $row) {
             $html .= '<tr>';
             foreach ($row as $value) {
@@ -126,21 +143,25 @@ class EmployeesExportService
             }
             $html .= '</tr>';
         }
-
+    
         $html .= '
                     </tbody>
                 </table>
             </div>
         </body>
         </html>';
-
+    
         $dompdf = new Dompdf();
         $dompdf->loadHtml($html, 'UTF-8');
+    
+        // Set to A4 portrait
         $dompdf->setPaper('A4', 'portrait');
+    
         $dompdf->render();
-
+    
         $filename = 'Employees_List_' . $safeBranchCode . '_' . $safeDate . '.pdf';
         $dompdf->stream($filename, ["Attachment" => true]);
         exit;
     }
+    
 }
