@@ -104,6 +104,7 @@ class StockController extends Controller
             ->where('trips.branch_id', $branchId)
             ->select('items.name as item_name', DB::raw('SUM(stock_items.quantity) as total_quantity'))
             ->groupBy('items.name')
+            ->orderBy('items.name', 'asc')
             ->paginate($perPage, ['*'], 'page', $page);
 
         // Check if export is requested
@@ -190,6 +191,7 @@ class StockController extends Controller
                 DB::raw('SUM(stock_items.quantity) as total_quantity')
             )
             ->groupBy('stock_items.item_id', 'items.name')
+            ->orderBy('items.name', 'asc')
             ->paginate($perPage, ['*'], 'page', $page);
 
         if ($request->boolean('export')) {
