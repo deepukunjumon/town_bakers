@@ -42,11 +42,11 @@ class ItemQuantityExport implements FromArray, WithHeadings, WithEvents, ShouldA
     public function headings(): array
     {
         return [
-            ['Branch Name:', $this->branchName],  // First Row
-            ['Branch Code:', $this->branchCode],  // Second Row
-            ['Date:', $this->date],               // Third Row
-            [],                                   // Empty Row
-            ['Sl. No', 'Item Name', 'Quantity'],  // Column headings
+            ['Branch Name:', $this->branchName],
+            ['Branch Code:', $this->branchCode],
+            ['Date:', $this->date],
+            [],
+            ['Sl. No', 'Item Name', 'Quantity'],  
         ];
     }
 
