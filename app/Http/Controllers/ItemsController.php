@@ -104,6 +104,12 @@ class ItemsController extends Controller
     }
 
 
+    /**
+     * Update Item Status
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
     public function updateItemStatus(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [

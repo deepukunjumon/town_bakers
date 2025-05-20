@@ -77,6 +77,7 @@ Route::middleware(['jwt.auth', 'check.password.reset'])->group(function () {
 
     Route::get('/branches/minimal', [BranchController::class, 'getMinimalBranches']);
     Route::get('/employees/minimal', [EmployeeController::class, 'getMinimalEmployees']);
+    Route::post('/employee/update-status', [EmployeeController::class, 'updateEmployeeStatus']);
 
     Route::post('/stock/add', [StockController::class, 'addStock']);
     Route::get('/stock/trip/{trip_id}', [StockController::class, 'getTripDetails']);
