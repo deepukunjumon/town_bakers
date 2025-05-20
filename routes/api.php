@@ -29,7 +29,6 @@ Route::middleware(['jwt.auth', 'check.password.reset'])->group(function () {
     Route::get('/profile', [UserController::class, 'getProfileDetails']);
     Route::post('/update/profile', [UserController::class, 'updateProfileDetails']);
 
-
     // Logout
     Route::post('/logout', [AuthController::class, 'logout']);
 
