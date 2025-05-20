@@ -37,6 +37,7 @@ class DashboardController extends Controller
         $pendingOrdersCount = DB::table('orders')
             ->where('status', ORDER_STATUSES['pending'])
             ->where('branch_id', Auth::user()->branch_id)
+            ->whereDate('delivery_date', '>=', Carbon::today())
             ->count();
 
         $todaysPendingOrdersCount = DB::table('orders')
