@@ -4,9 +4,11 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Tymon\JWTAuth\Http\Middleware\Authenticate;
+
 use App\Http\Middleware\CheckPasswordResetMiddleware;
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\BranchMiddleware;
+use App\Http\Middleware\CorsMiddleware;
 
 $constantsPath = __DIR__ . '/../app/constants.php';
 if (file_exists($constantsPath)) {
