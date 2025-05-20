@@ -15,7 +15,7 @@ class CorsMiddleware
         // Allow only your frontend in dev mode
         $allowedOrigins = [
             'http://localhost:3000',
-            'https://tbms.up.raiway.app', // Add production domain if needed
+            'https://tbms.up.railway.app', // Add production domain if needed
         ];
 
         $response = $request->getMethod() === 'OPTIONS'
