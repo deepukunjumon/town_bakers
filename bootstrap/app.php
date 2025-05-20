@@ -23,9 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        $middleware->global([
-            CorsMiddleware::class,
-        ]);
+        $middleware->prepend(CorsMiddleware::class);
         $middleware->alias([
             'jwt.auth' => Authenticate::class,
             'admin' => AdminMiddleware::class,
