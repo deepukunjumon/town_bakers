@@ -29,6 +29,7 @@ Route::middleware(['jwt.auth', 'check.password.reset'])->group(function () {
     Route::get('/profile', [UserController::class, 'getProfileDetails']);
     Route::post('/update/profile', [UserController::class, 'updateProfileDetails']);
 
+
     // Logout
     Route::post('/logout', [AuthController::class, 'logout']);
 
@@ -68,7 +69,9 @@ Route::middleware(['jwt.auth', 'check.password.reset'])->group(function () {
 
     // General authenticated routes (available to all roles)
     Route::post('/create/item', [ItemsController::class, 'createItem']);
-    Route::get('/items/list', [ItemsController::class, 'getItems']);
+    Route::get('/items', [ItemsController::class, 'getAllItems']);
+    Route::get('/items/minimal', [ItemsController::class, 'getMinimalActiveItems']);
+    Route::post('/item/update-status', [ItemsController::class, 'updateItemStatus']);
 
     Route::post('/create/designation', [DesignationController::class, 'createDesignation']);
     Route::get('/designations', [DesignationController::class, 'getAllActiveDesignations']);
