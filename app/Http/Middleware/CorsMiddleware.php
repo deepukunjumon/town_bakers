@@ -10,25 +10,26 @@ class CorsMiddleware
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $origin = $request->headers->get('Origin', '*');
+        $origin = $request->headers->get('Origin');
 
-        // Allow only your frontend in dev mode
         $allowedOrigins = [
             'http://localhost:3000',
-            'https://tbms.up.railway.app', // Add production domain if needed
+            'https://tbms.up.railway.app',
         ];
 
-        $response = $request->getMethod() === 'OPTIONS'
-            ? response('', 204)
-            : $next($request);
-
-        if (in_array($origin, $allowedOrigins)) {
-            $response->headers->set('Access-Control-Allow-Origin', $origin);
+        if ($request->getMethod() === 'OPTIONS') {
+            $response = response('', 204);
+        } else {
+            $response = $next($request);
         }
 
-        return $response
-            ->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
-            ->header('Access-Control-Allow-Headers', 'Content-Type, X-Requested-With, Authorization')
-            ->header('Access-Control-Allow-Credentials', 'true');
+        if ($origin && in_array($origin, $allowedOrigins)) {
+            $response->headers->set('Access-Control-Allow-Origin', $origin);
+            $response->headers->set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+            $response->headers->set('Access-Control-Allow-Headers', 'Content-Type, X-Requested-With, Authorization');
+            $response->headers->set('Access-Control-Allow-Credentials', 'true');
+        }
+
+        return $response;
     }
 }
