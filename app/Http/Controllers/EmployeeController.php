@@ -490,4 +490,48 @@ class EmployeeController extends Controller
             ]);
         }
     }
+
+    /**
+     * Update Employee Status
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function updateEmployeeStatus(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|exists:employees,id',
+            'status' => 'required|in:-1,0,1',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $employee = Employee::find($request->id);
+
+        if ($employee->status == $request->status) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Status is already set to the given value',
+            ], 422);
+        }
+
+        $employee->status = $request->status;
+
+        if (!$employee->save()) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Failed to update employee status',
+            ], 500);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Updated',
+        ], 200);
+    }
 }
