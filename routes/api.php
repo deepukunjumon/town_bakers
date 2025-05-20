@@ -14,6 +14,10 @@ use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\BranchMiddleware;
 use Illuminate\Support\Facades\Route;
 
+Route::options('{any}', function () {
+    return response()->json([], 204);
+})->where('any', '.*');
+
 Route::get('/ping', function () {
     return response()->json(['message' => 'pong']);
 });
