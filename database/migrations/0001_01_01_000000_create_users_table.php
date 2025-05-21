@@ -3,6 +3,9 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Hash;
 
 return new class extends Migration
 {
@@ -12,7 +15,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->string('username')->unique()->index();
             $table->string('password');
-            $table->boolean('is_admin')->default(false);
+            $table->enum('role', ['super_admin', 'admin', 'branch'])->default('branch');
             $table->tinyInteger('status')->default(1)->comment('1 = active, 0 = inactive, -1 = deleted');
             $table->timestamps();
         });
@@ -31,6 +34,17 @@ return new class extends Migration
             $table->longText('payload');
             $table->integer('last_activity')->index();
         });
+
+        // Insert a super user into the 'users' table after creating it
+        DB::table('users')->insert([
+            'id' => Str::uuid(),
+            'username' => 'super_admin',
+            'password' => Hash::make(DEFAULT_PASSWORD),
+            'role' => ROLES['super_admin'],
+            'status' => DEFAULT_STATUSES['active'],
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
     }
 
     public function down(): void

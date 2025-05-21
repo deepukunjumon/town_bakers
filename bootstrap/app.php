@@ -5,6 +5,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Tymon\JWTAuth\Http\Middleware\Authenticate;
 use App\Http\Middleware\CheckPasswordResetMiddleware;
+use App\Http\Middleware\SuperAdminMiddleware;
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\BranchMiddleware;
 
@@ -23,6 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
             'jwt.auth' => Authenticate::class,
+            'super-admin' => SuperAdminMiddleware::class,
             'admin' => AdminMiddleware::class,
             'branch' => BranchMiddleware::class,
             'check.password.reset' => CheckPasswordResetMiddleware::class,

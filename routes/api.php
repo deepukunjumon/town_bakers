@@ -12,6 +12,7 @@ use App\Http\Controllers\OrderController;
 use App\Http\Middleware\CheckPasswordResetMiddleware;
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\BranchMiddleware;
+use App\Http\Middleware\SuperAdminMiddleware;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/ping', function () {
@@ -31,6 +32,9 @@ Route::middleware(['jwt.auth', 'check.password.reset'])->group(function () {
 
     // Logout
     Route::post('/logout', [AuthController::class, 'logout']);
+
+    // Super Admin only routes
+    Route::prefix('/super-admin')->middleware(SuperAdminMiddleware::class)->group(function () {});
 
     // Admin-only routes
     Route::prefix('admin')->middleware(AdminMiddleware::class)->group(function () {
