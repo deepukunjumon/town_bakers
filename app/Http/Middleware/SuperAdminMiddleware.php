@@ -8,7 +8,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
-class AdminMiddleware
+class SuperAdminMiddleware
 {
     public function handle(Request $request, Closure $next)
     {
@@ -26,7 +26,7 @@ class AdminMiddleware
 
         $role = $tokenPayload->get('role');
 
-        if (in_array($role, ['admin', 'super_admin'])) {
+        if (in_array($role, ['super_admin'])) {
             return $next($request);
         }
 
