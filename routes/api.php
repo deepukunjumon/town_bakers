@@ -40,7 +40,8 @@ Route::middleware(['jwt.auth', 'check.password.reset'])->group(function () {
         Route::post('/import/employees', [EmployeeController::class, 'importEmployees']);
 
         Route::get('/branches', [BranchController::class, 'getAllBranches']);
-        Route::put('/branch/{branch_id}', [BranchController::class, 'updateBranch']);
+        Route::get('/branch/{branch_id}', [BranchController::class, 'getBranchDetails']);
+        Route::put('/branch/update/{branch_id}', [BranchController::class, 'updateBranch']);
 
         Route::get('/all-employees', [EmployeeController::class, 'getAllEmployees']);
         Route::put('/employee/{employee_id}', [EmployeeController::class, 'updateEmployee']);
