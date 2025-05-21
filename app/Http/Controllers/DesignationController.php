@@ -50,7 +50,7 @@ class DesignationController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $designations
+            'designations' => $designations
         ], 200);
     }
 }

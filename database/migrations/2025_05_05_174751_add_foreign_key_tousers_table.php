@@ -10,6 +10,7 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             $table->foreignUuid('branch_id')
+                ->after('role')
                 ->nullable()
                 ->constrained('branches')
                 ->nullOnDelete()

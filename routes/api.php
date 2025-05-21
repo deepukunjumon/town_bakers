@@ -34,7 +34,10 @@ Route::middleware(['jwt.auth', 'check.password.reset'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 
     // Super Admin only routes
-    Route::prefix('/super-admin')->middleware(SuperAdminMiddleware::class)->group(function () {});
+    Route::prefix('/super-admin')->middleware(SuperAdminMiddleware::class)->group(function () {
+        Route::get('/dashboard/stats', [DashboardController::class, 'getSuperAdminDashboardStats']);
+        Route::post('/create/user', [UserController::class, 'createUser']);
+    });
 
     // Admin-only routes
     Route::prefix('admin')->middleware(AdminMiddleware::class)->group(function () {
