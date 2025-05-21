@@ -20,19 +20,23 @@ class User extends Authenticatable implements JWTSubject
 
     public function getJWTCustomClaims()
     {
-        $this->is_admin === 1 ? $role = 'admin' : $role = 'branch';
-        if ($role == 'admin') {
+        if (in_array($this->role, [ROLES['super_admin'], ROLES['admin']])) {
             return [
-                'role' => $role,
+                'role' => $this->role,
                 'branch_id' => null
             ];
         }
-        if ($role == 'branch') {
+        if ($this->role == 'branch') {
             return [
-                'role' => $role,
+                'role' => $this->role,
                 'branch_id' => $this->branch_id
             ];
         }
+
+        return [
+            'role' => $this->role,
+            'branch_id' => $this->branch_id ?? null
+        ];
     }
 
     public function branch()
@@ -45,7 +49,7 @@ class User extends Authenticatable implements JWTSubject
         'mobile',
         'email',
         'password',
-        'is_admin',
+        'role',
         'branch_id',
         'status'
     ];

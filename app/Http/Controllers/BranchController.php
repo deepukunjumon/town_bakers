@@ -59,7 +59,7 @@ class BranchController extends Controller
                 'email' => $branch->email,
                 'password' => Hash::make(DEFAULT_PASSWORD),
                 'branch_id' => $branch->id,
-                'is_admin' => false
+                'role' => ROLES['branch']
             ]);
 
             DB::commit();

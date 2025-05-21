@@ -32,13 +32,11 @@ class UserController extends Controller
             'username' => $user->username,
             'mobile' => $user->mobile,
             'email' => $user->email,
+            'role' => $user->role,
             'user_since' => $user->created_at ? $user->created_at->format('Y-m-d') : ""
         ];
 
-        if ($user->is_admin) {
-            $userDetails['role'] = 'Admin';
-        } else {
-            $userDetails['role'] = 'Branch';
+        if ($user->role == ROLES['branch']) {
 
             $branch = DB::table('branches')->where('id', $user->branch_id)->first();
 
@@ -80,7 +78,7 @@ class UserController extends Controller
             'email' => 'sometimes|email|max:255',
         ];
 
-        if (!$user->is_admin) {
+        if ($user->role == ROLES['branch']) {
             $rules['branch.name'] = 'sometimes|string|max:255';
             $rules['branch.code'] = 'sometimes|nullable|string|max:50';
             $rules['branch.address'] = 'sometimes|nullable|string|max:500';
@@ -101,7 +99,7 @@ class UserController extends Controller
         $userUpdates = array_filter($input, fn($val) => $val !== null);
 
         $branchUpdates = [];
-        if (!$user->is_admin && $user->branch_id) {
+        if ($user->role == ROLES['branch']) {
             foreach (['name', 'code', 'address'] as $field) {
                 if (isset($branchData[$field]) && $branchData[$field] !== null) {
                     $branchUpdates[$field] = $branchData[$field];
