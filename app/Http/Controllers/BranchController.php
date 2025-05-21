@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Branch;
+use App\Models\Employee;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
@@ -159,6 +160,40 @@ class BranchController extends Controller
     }
 
     /**
+     * Get branch details with ID
+     * 
+     * @param string $request
+     * @return JsonResponse
+     */
+    public function getBranchDetails(string $branch_id): JsonResponse
+    {
+        $validator = Validator::make(
+            ['branch_id' => $branch_id],
+            ['branch_id' => 'required']
+        );
+
+        if ($validator->fails()) {
+            return response()->json(['success' => false, 'error' => 'Branch ID not provided or invalid'], 422);
+        }
+
+        $branch = Branch::select('id', 'code', 'name', 'address', 'mobile', 'email', 'status')
+            ->find($branch_id);
+
+        if (!$branch) {
+            return response()->json(['success' => false, 'error' => 'Branch not found'], 404);
+        }
+
+        $branch['active_employees_count'] = Employee::where('branch_id', $branch_id)
+            ->where('status', DEFAULT_STATUSES['active'])
+            ->count();
+
+        return response()->json([
+            'success' => true,
+            'branch_details' => $branch,
+        ], 200);
+    }
+
+    /**
      * Get list of all branches
      * 
      * @param Request $request
@@ -167,53 +202,58 @@ class BranchController extends Controller
     public function getAllBranches(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'offset' => 'nullable|integer|min:0',
-            'limit' => 'nullable|integer|min:1',
-            'sortKey' => 'nullable|string|in:created_at,code,name,start_date,end_date',
+            'page' => 'nullable|integer|min:1',
+            'per_page' => 'nullable|integer|min:1',
+            'sortKey' => 'nullable|string|in:created_at,code,name',
             'sortDirection' => 'nullable|string|in:asc,desc',
             'q' => 'nullable|string',
-            'start_date' => 'nullable|date',
-            'end_date' => 'nullable|date',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        $offset = $request->input('offset', 0);
-        $limit = $request->input('limit', 10);
+        $page = $request->input('page', 1);
+        $perPage = $request->input('per_page', 10);
         $sortKey = $request->input('sortKey', 'created_at');
         $sortDirection = $request->input('sortDirection', 'desc');
         $searchQuery = $request->input('q', '');
-        $startDate = $request->input('start_date');
-        $endDate = $request->input('end_date');
 
-        $branchesQuery = Branch::query();
+        $query = Branch::query();
 
         if ($searchQuery) {
-            $branchesQuery->where(function ($query) use ($searchQuery) {
+            $query->where(function ($query) use ($searchQuery) {
                 $query->where('code', 'like', '%' . $searchQuery . '%')
                     ->orWhere('name', 'like', '%' . $searchQuery . '%')
                     ->orWhere('address', 'like', '%' . $searchQuery . '%');
             });
         }
 
-        if ($startDate && $endDate) {
-            $branchesQuery->whereBetween('created_at', [$startDate, $endDate]);
-        }
+        $query->orderBy($sortKey, $sortDirection);
 
-        $branchesQuery->orderBy($sortKey, $sortDirection);
-        $branches = $branchesQuery->skip($offset)->take($limit)->get();
-        $total = $branchesQuery->count();
+        $branches = $query->paginate($perPage, ['*'], 'page', $page);
+
+        $branchesData = $branches->map(function ($branch) {
+            return [
+                'id' => $branch->id,
+                'code' => $branch->code,
+                'name' => $branch->name,
+                'address' => $branch->address,
+                'mobile' => $branch->mobile,
+                'email' => $branch->email,
+                'phone' => $branch->phone,
+                'status' => $branch->status
+            ];
+        });
 
         return response()->json([
             'success' => true,
-            'message' => 'Branches fetched successfully',
-            'branches' => $branches,
+            'branches' => $branchesData,
             'pagination' => [
-                'offset' => $offset,
-                'limit' => $limit,
-                'total' => $total,
+                'current_page' => $branches->currentPage(),
+                'last_page' => $branches->lastPage(),
+                'per_page' => $branches->perPage(),
+                'total' => $branches->total(),
             ],
         ]);
     }
@@ -246,7 +286,7 @@ class BranchController extends Controller
                 'id' => $branch->id,
                 'code' => $branch->code,
                 'name' => $branch->name,
-                'status' => $branch->status == DEFAULT_STATUSES['active'] ? 'Active' : ($branch->status == DEFAULT_STATUSES['inactive'] ? 'Inactive' : 'Deleted'),
+                'status' => $branch->status
             ];
         });
 

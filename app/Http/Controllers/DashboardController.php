@@ -3,13 +3,19 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
 
 class DashboardController extends Controller
 {
-    public function getAdminDashboardStats()
+
+    /**
+     * Admin Dashboard Stats
+     * @return JsonResponse
+     */
+    public function getAdminDashboardStats(): JsonResponse
     {
         $activeEmployeesCount = DB::table('employees')
             ->where('status', DEFAULT_STATUSES['active'])
@@ -17,17 +23,25 @@ class DashboardController extends Controller
         $activeBranchesCount = DB::table('branches')
             ->where('status', DEFAULT_STATUSES['active'])
             ->count();
+        $pendingOrdersCount = DB::table('orders')
+            ->where('status', ORDER_STATUSES['pending'])
+            ->count();
 
         return response()->json([
             'success' => true,
             'data' => [
                 'active_employees_count' => $activeEmployeesCount,
                 'active_branches_count' => $activeBranchesCount,
+                'pending_orders_count' => $pendingOrdersCount
             ]
         ]);
     }
 
-    public function getBranchDashboardStats()
+    /**
+     * Branch Dashboard Stats
+     * @return JsonResponse
+     */
+    public function getBranchDashboardStats(): JsonResponse
     {
         $activeEmployeesCount = DB::table('employees')
             ->where('status', DEFAULT_STATUSES['active'])
