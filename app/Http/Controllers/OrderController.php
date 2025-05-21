@@ -264,7 +264,7 @@ class OrderController extends Controller
             ->findOrFail($id);
 
         $user = Auth::user();
-        if ($user->branch_id !== $order->branch_id && !$user->is_admin) {
+        if ($user->branch_id !== $order->branch_id && !in_array($user->role, [ROLES['super_admin'], ROLES['admin']])) {
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
         }
 
