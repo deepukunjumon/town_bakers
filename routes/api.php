@@ -34,7 +34,10 @@ Route::middleware(['jwt.auth', 'check.password.reset'])->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
 
     // Super Admin only routes
-    Route::prefix('/super-admin')->middleware(SuperAdminMiddleware::class)->group(function () {});
+    Route::prefix('/super-admin')->middleware(SuperAdminMiddleware::class)->group(function () {
+        Route::get('/dashboard/stats', [DashboardController::class, 'getSuperAdminDashboardStats']);
+        Route::post('/create/user', [UserController::class, 'createUser']);
+    });
 
     // Admin-only routes
     Route::prefix('admin')->middleware(AdminMiddleware::class)->group(function () {
@@ -78,7 +81,9 @@ Route::middleware(['jwt.auth', 'check.password.reset'])->group(function () {
     Route::post('/item/update-status', [ItemsController::class, 'updateItemStatus']);
 
     Route::post('/create/designation', [DesignationController::class, 'createDesignation']);
-    Route::get('/designations', [DesignationController::class, 'getAllActiveDesignations']);
+    Route::get('/designations', [DesignationController::class, 'getAllDesignations']);
+    Route::get('/designations/active', [DesignationController::class, 'getActiveDesignations']);
+    Route::post('/designation/update-status', [DesignationController::class, 'updateDesignationStatus']);
 
     Route::get('/branches/minimal', [BranchController::class, 'getMinimalBranches']);
     Route::get('/employees/minimal', [EmployeeController::class, 'getMinimalEmployees']);

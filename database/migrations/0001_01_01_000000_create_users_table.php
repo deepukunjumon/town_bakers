@@ -38,7 +38,7 @@ return new class extends Migration
         // Insert a super user into the 'users' table after creating it
         DB::table('users')->insert([
             'id' => Str::uuid(),
-            'username' => 'super_admin',
+            'username' => 'superadmin',
             'password' => Hash::make(DEFAULT_PASSWORD),
             'role' => ROLES['super_admin'],
             'status' => DEFAULT_STATUSES['active'],

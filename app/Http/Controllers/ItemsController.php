@@ -138,7 +138,7 @@ class ItemsController extends Controller
         if (!$item->save()) {
             return response()->json([
                 'success' => false,
-                'error' => 'Failed to update item status',
+                'error' => 'Failed to update status',
             ], 500);
         }
 

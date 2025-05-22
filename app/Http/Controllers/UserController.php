@@ -9,9 +9,122 @@ use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Symfony\Component\HttpFoundation\Response;
+use \App\Http\Controllers\EmployeeController;
+use \App\Http\Controllers\BranchController;
 
 class UserController extends Controller
 {
+
+    /**
+     * Create user
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function createUser(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'username' => 'required|string|unique:users,username',
+            'mobile' => 'required|digits:10',
+            'email' => 'required|email|unique:users,email',
+            'role' => 'required|in:admin,branch,employee',
+            'status' => 'in:-1,0,1'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $additional_info = null;
+
+        // Handle admin
+        if ($request->role == ROLES['admin']) {
+            $user = User::create([
+                'username' => $request->username,
+                'mobile' => $request->mobile,
+                'email' => $request->email,
+                'password' => DEFAULT_PASSWORD,
+                'role' => ROLES['admin'],
+                'status' => DEFAULT_STATUSES['active']
+            ]);
+
+            if ($user) {
+                $additional_info = "Credentials for the user are:\n" .
+                    "Username: {$request->username}\n" .
+                    "Password: " . DEFAULT_PASSWORD;
+
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Admin User Created Successfully',
+                    'additional_info' => $additional_info
+                ], 201);
+            }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create admin user.'
+            ], 500);
+        }
+
+        // Handle branch
+        if ($request->role == ROLES['branch']) {
+            $branchValidator = Validator::make($request->all(), [
+                'code' => 'required|string|unique:branches,code',
+                'name' => 'required|string',
+                'address' => 'required|string',
+                'mobile' => 'required|digits:10',
+                'email' => 'required|email|unique:branches,email'
+            ]);
+
+            if ($branchValidator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => $branchValidator->errors()
+                ], 422);
+            }
+
+            $branchController = new BranchController();
+            $response = $branchController->createBranch($request);
+
+            if ($response->getStatusCode() === 201) {
+                $additional_info = "Credentials for the branch user are:\n" .
+                    "Username: {$request->username}\n" .
+                    "Password: " . DEFAULT_PASSWORD;
+            }
+
+            return $response;
+        }
+
+        // Handle employee
+        if ($request->role == ROLES['employee']) {
+            $employeeValidator = Validator::make($request->all(), [
+                'employee_code' => 'required|string|unique:employees,employee_code',
+                'name' => 'required|string',
+                'mobile' => 'required|digits:10',
+                'designation_id' => 'required|exists:designations,id',
+                'branch_id' => 'required|exists:branches,id'
+            ]);
+
+            if ($employeeValidator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => $employeeValidator->errors()
+                ], 422);
+            }
+
+            $employeeController = new EmployeeController();
+            return $employeeController->createEmployeeForAdmin($request);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'User Created Successfully',
+            'additional_info' => $additional_info
+        ], 201);
+    }
 
     /**
      * Get the profile of the authenticated user.

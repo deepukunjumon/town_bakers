@@ -5,6 +5,7 @@ if (!defined('ROLES')) {
         'super_admin' => 'super_admin',
         'admin' => 'admin',
         'branch' => 'branch',
+        'employee' => 'employee'
     ]);
 }
 
