@@ -81,7 +81,9 @@ Route::middleware(['jwt.auth', 'check.password.reset'])->group(function () {
     Route::post('/item/update-status', [ItemsController::class, 'updateItemStatus']);
 
     Route::post('/create/designation', [DesignationController::class, 'createDesignation']);
-    Route::get('/designations', [DesignationController::class, 'getAllActiveDesignations']);
+    Route::get('/designations', [DesignationController::class, 'getAllDesignations']);
+    Route::get('/designations/active', [DesignationController::class, 'getActiveDesignations']);
+    Route::post('/designation/update-status', [DesignationController::class, 'updateDesignationStatus']);
 
     Route::get('/branches/minimal', [BranchController::class, 'getMinimalBranches']);
     Route::get('/employees/minimal', [EmployeeController::class, 'getMinimalEmployees']);
