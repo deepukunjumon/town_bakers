@@ -64,9 +64,14 @@ class BranchController extends Controller
 
             DB::commit();
 
+            $additional_info = null;
+
             return response()->json([
                 'success' => true,
                 'message' => 'Branch created successfully',
+                'additional_info' => "Credentials for the branch user are:\n" .
+                    "Username: {$username}\n" .
+                    "Password: " . DEFAULT_PASSWORD
             ], 201);
         } catch (\Exception $e) {
             DB::rollBack();
