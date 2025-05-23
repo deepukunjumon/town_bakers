@@ -25,8 +25,9 @@ class UserController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'username' => 'required_if:role,admin,branch|string|unique:users,username',
+            'name' => 'required|string',
             'mobile' => 'required|digits:10',
-            'email' => 'required|email|unique:users,email',
+            'email' => 'nullable|email|unique:users,email',
             'role' => 'required|in:admin,branch,employee',
             'status' => 'in:-1,0,1'
         ]);
@@ -44,6 +45,7 @@ class UserController extends Controller
         if ($request->role == ROLES['admin']) {
             $user = User::create([
                 'username' => $request->username,
+                'name' => $request->name,
                 'mobile' => $request->mobile,
                 'email' => $request->email,
                 'password' => DEFAULT_PASSWORD,

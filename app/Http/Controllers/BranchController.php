@@ -55,6 +55,7 @@ class BranchController extends Controller
             // Create a user for the branch
             $user = User::create([
                 'username' => $username,
+                'name' => $branch->name,
                 'mobile' => $branch->mobile,
                 'email' => $branch->email,
                 'password' => Hash::make(DEFAULT_PASSWORD),
