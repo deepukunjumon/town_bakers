@@ -24,7 +24,7 @@ class UserController extends Controller
     public function createUser(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'username' => 'required|string|unique:users,username',
+            'username' => 'required_if:role,admin,branch|string|unique:users,username',
             'mobile' => 'required|digits:10',
             'email' => 'required|email|unique:users,email',
             'role' => 'required|in:admin,branch,employee',
