@@ -27,7 +27,7 @@ class AuthController extends Controller
         if (!$token = Auth::guard('api')->attempt($credentials)) {
             return response()->json([
                 'success' => false,
-                'error' => 'Invalid code or password'
+                'error' => 'Invalid Credentials'
             ], 401);
         }
 
@@ -42,7 +42,8 @@ class AuthController extends Controller
             'password_reset_required' => $passwordResetRequired,
             'user' => [
                 'id' => $user->id,
-                'name' => $user->username ?? 'Unknown User',
+                'name' => $user->name,
+                'role' => $user->role
             ]
         ]);
     }

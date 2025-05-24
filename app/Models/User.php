@@ -22,18 +22,21 @@ class User extends Authenticatable implements JWTSubject
     {
         if (in_array($this->role, [ROLES['super_admin'], ROLES['admin']])) {
             return [
+                'name' => $this->name,
                 'role' => $this->role,
                 'branch_id' => null
             ];
         }
         if ($this->role == 'branch') {
             return [
+                'name' => $this->name,
                 'role' => $this->role,
                 'branch_id' => $this->branch_id
             ];
         }
 
         return [
+            'name' => $this->name,
             'role' => $this->role,
             'branch_id' => $this->branch_id ?? null
         ];

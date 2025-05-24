@@ -39,6 +39,7 @@ return new class extends Migration
         DB::table('users')->insert([
             'id' => Str::uuid(),
             'username' => 'superadmin',
+            'name' => 'Super Admin',
             'password' => Hash::make(DEFAULT_PASSWORD),
             'role' => ROLES['super_admin'],
             'status' => DEFAULT_STATUSES['active'],
