@@ -7,6 +7,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\ItemsController;
 use App\Http\Controllers\StockController;
+use App\Http\Controllers\MailController;
 use App\Http\Controllers\DesignationController;
 use App\Http\Controllers\OrderController;
 use App\Http\Middleware\CheckPasswordResetMiddleware;
@@ -22,21 +23,25 @@ Route::get('/ping', function () {
 // Login route (public)
 Route::post('/login', [AuthController::class, 'login']);
 
+// Password reset routes (public)
+Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+Route::post('/reset-password', [AuthController::class, 'resetPasswordWithToken']);
 Route::middleware('auth:api')->post('/password/reset', [AuthController::class, 'resetPassword']);
 
 // Authenticated routes
 Route::middleware(['jwt.auth', 'check.password.reset'])->group(function () {
-
+    
     Route::get('/profile', [UserController::class, 'getProfileDetails']);
     Route::post('/update/profile', [UserController::class, 'updateProfileDetails']);
-
+    
     // Logout
     Route::post('/logout', [AuthController::class, 'logout']);
-
+    
     // Super Admin only routes
     Route::prefix('/super-admin')->middleware(SuperAdminMiddleware::class)->group(function () {
         Route::get('/dashboard/stats', [DashboardController::class, 'getSuperAdminDashboardStats']);
         Route::post('/create/user', [UserController::class, 'createUser']);
+        Route::post('/test-mail', [MailController::class, 'testMail']);
     });
 
     // Admin-only routes
