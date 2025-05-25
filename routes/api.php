@@ -60,6 +60,10 @@ Route::middleware(['jwt.auth', 'check.password.reset'])->group(function () {
         Route::get('/employees/{branch_id}', [EmployeeController::class, 'getEmployeesByBranch']);
 
         Route::post('/branchwise/stock/summary', [StockController::class, 'branchwiseStockSummary']);
+
+        // Order routes
+        Route::get('/orders', [OrderController::class, 'getAllOrders']);
+        Route::get('/orders/branch/{branch_id}', [OrderController::class, 'getOrdersByBranchID']);
     });
 
     // Branch-only routes (NOT affected by AdminMiddleware)
@@ -73,27 +77,28 @@ Route::middleware(['jwt.auth', 'check.password.reset'])->group(function () {
         //Order routes
         Route::post('/create/order', [OrderController::class, 'createOrder']);
         Route::get('/orders', [OrderController::class, 'getOrdersForBranch']);
-        Route::get('/order/{id}', [OrderController::class, 'getOrderDetailsByID']);
-
+        
         //Stock routes
         Route::post('/stock/summary', [StockController::class, 'getItemsByDate']);
     });
-
+    
     // General authenticated routes (available to all roles)
     Route::post('/create/item', [ItemsController::class, 'createItem']);
     Route::get('/items', [ItemsController::class, 'getAllItems']);
     Route::get('/items/minimal', [ItemsController::class, 'getMinimalActiveItems']);
     Route::post('/item/update-status', [ItemsController::class, 'updateItemStatus']);
-
+    
     Route::post('/create/designation', [DesignationController::class, 'createDesignation']);
     Route::get('/designations', [DesignationController::class, 'getAllDesignations']);
     Route::get('/designations/active', [DesignationController::class, 'getActiveDesignations']);
     Route::post('/designation/update-status', [DesignationController::class, 'updateDesignationStatus']);
-
+    
     Route::get('/branches/minimal', [BranchController::class, 'getMinimalBranches']);
     Route::get('/employees/minimal', [EmployeeController::class, 'getMinimalEmployees']);
     Route::post('/employee/update-status', [EmployeeController::class, 'updateEmployeeStatus']);
-
+    
+    Route::get('/order/{id}', [OrderController::class, 'getOrderDetailsByID']);
+    
     Route::post('/stock/add', [StockController::class, 'addStock']);
     Route::get('/stock/trip/{trip_id}', [StockController::class, 'getTripDetails']);
 
