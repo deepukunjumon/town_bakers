@@ -84,13 +84,6 @@ class OrderController extends Controller
         $orders = $ordersQuery->orderBy('delivery_date', 'asc')
             ->paginate($perPage, ['*'], 'page', $page);
 
-        if ($orders->isEmpty()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No orders found for the given date range'
-            ]);
-        }
-
         $ordersResource = OrderSummaryResource::collection($orders);
 
         return response()->json([

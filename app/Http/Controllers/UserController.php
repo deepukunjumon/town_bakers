@@ -145,6 +145,7 @@ class UserController extends Controller
         $userDetails = [
             'id' => $user->id,
             'username' => $user->username,
+            'name' => $user->name,
             'mobile' => $user->mobile,
             'email' => $user->email,
             'role' => $user->role,
