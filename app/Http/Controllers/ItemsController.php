@@ -66,6 +66,8 @@ class ItemsController extends Controller
             $query->where('name', 'like', "%{$search}%");
         }
 
+        $query->orderBy('name', 'asc');
+
         $items = $query->paginate($perPage, ['id', 'name', 'status'], 'page', $page);
 
         $transformed = $items->getCollection()->transform(function ($item) {
@@ -95,6 +97,7 @@ class ItemsController extends Controller
     public function getMinimalActiveItems(): JsonResponse
     {
         $items = Items::where('status', DEFAULT_STATUSES['active'])
+            ->orderby('name', 'desc')
             ->get(['id', 'name']);
 
         return response()->json([
