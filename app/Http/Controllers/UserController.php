@@ -190,6 +190,7 @@ class UserController extends Controller
 
         $rules = [
             'username' => 'sometimes|string|max:255',
+            'name' => 'sometimes|string|max:255',
             'mobile' => 'sometimes|string|max:20',
             'email' => 'sometimes|email|max:255',
         ];
@@ -209,7 +210,7 @@ class UserController extends Controller
             ], 422);
         }
 
-        $input = $request->only(['username', 'mobile', 'email']);
+        $input = $request->only(['username', 'name', 'mobile', 'email']);
         $branchData = $request->input('branch', []);
 
         $userUpdates = array_filter($input, fn($val) => $val !== null);
