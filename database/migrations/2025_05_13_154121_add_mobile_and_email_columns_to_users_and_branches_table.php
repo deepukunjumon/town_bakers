@@ -15,7 +15,8 @@ return new class extends Migration
             $table->string('email')->nullable()->after('mobile');
         });
         Schema::table('users', function (Blueprint $table) {
-            $table->string('mobile')->nullable()->after('username');
+            $table->string('name')->after('username');
+            $table->string('mobile')->nullable()->after('name');
             $table->string('email')->nullable()->after('mobile');
         });
     }
@@ -29,6 +30,7 @@ return new class extends Migration
             $table->dropColumn('email');
         });
         Schema::table('users', function (Blueprint $table) {
+            $table->dropColumn('name');
             $table->dropColumn('mobile');
             $table->dropColumn('email');
         });
