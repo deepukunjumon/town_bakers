@@ -30,13 +30,13 @@ Route::middleware('auth:api')->post('/password/reset', [AuthController::class, '
 
 // Authenticated routes
 Route::middleware(['jwt.auth', 'check.password.reset'])->group(function () {
-    
+
     Route::get('/profile', [UserController::class, 'getProfileDetails']);
     Route::post('/update/profile', [UserController::class, 'updateProfileDetails']);
-    
+
     // Logout
     Route::post('/logout', [AuthController::class, 'logout']);
-    
+
     // Super Admin only routes
     Route::prefix('/super-admin')->middleware(SuperAdminMiddleware::class)->group(function () {
         Route::get('/dashboard/stats', [DashboardController::class, 'getSuperAdminDashboardStats']);
@@ -56,7 +56,6 @@ Route::middleware(['jwt.auth', 'check.password.reset'])->group(function () {
         Route::put('/branch/update/{branch_id}', [BranchController::class, 'updateBranch']);
 
         Route::get('/all-employees', [EmployeeController::class, 'getAllEmployees']);
-        Route::put('/employee/{employee_id}', [EmployeeController::class, 'updateEmployee']);
         Route::get('/employees/{branch_id}', [EmployeeController::class, 'getEmployeesByBranch']);
 
         Route::post('/branchwise/stock/summary', [StockController::class, 'branchwiseStockSummary']);
@@ -77,29 +76,30 @@ Route::middleware(['jwt.auth', 'check.password.reset'])->group(function () {
         //Order routes
         Route::post('/create/order', [OrderController::class, 'createOrder']);
         Route::get('/orders', [OrderController::class, 'getOrdersForBranch']);
-        
+
         //Stock routes
         Route::post('/stock/summary', [StockController::class, 'getItemsByDate']);
     });
-    
+
     // General authenticated routes (available to all roles)
     Route::post('/create/item', [ItemsController::class, 'createItem']);
     Route::post('/import/items', [ItemsController::class, 'importItems']);
     Route::get('/items', [ItemsController::class, 'getAllItems']);
     Route::get('/items/minimal', [ItemsController::class, 'getMinimalActiveItems']);
     Route::post('/item/update-status', [ItemsController::class, 'updateItemStatus']);
-    
+
     Route::post('/create/designation', [DesignationController::class, 'createDesignation']);
     Route::get('/designations', [DesignationController::class, 'getAllDesignations']);
     Route::get('/designations/active', [DesignationController::class, 'getActiveDesignations']);
     Route::post('/designation/update-status', [DesignationController::class, 'updateDesignationStatus']);
-    
+
     Route::get('/branches/minimal', [BranchController::class, 'getMinimalBranches']);
     Route::get('/employees/minimal', [EmployeeController::class, 'getMinimalEmployees']);
+    Route::put('/employee/{employee_id}', [EmployeeController::class, 'updateEmployeeDetails']);
     Route::post('/employee/update-status', [EmployeeController::class, 'updateEmployeeStatus']);
-    
+
     Route::get('/order/{id}', [OrderController::class, 'getOrderDetailsByID']);
-    
+
     Route::post('/stock/add', [StockController::class, 'addStock']);
     Route::get('/stock/trip/{trip_id}', [StockController::class, 'getTripDetails']);
 
