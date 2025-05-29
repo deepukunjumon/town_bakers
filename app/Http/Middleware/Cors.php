@@ -17,33 +17,31 @@ class Cors
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $headers = [
-            'Access-Control-Allow-Origin' => '*',
-            'Access-Control-Allow-Methods' => 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
-            'Access-Control-Allow-Headers' => 'Content-Type, Authorization, X-Requested-With, X-CSRF-TOKEN, X-XSRF-TOKEN',
-            'Access-Control-Allow-Credentials' => 'true',
-            'Access-Control-Max-Age' => '86400',
-            'Access-Control-Expose-Headers' => 'Content-Length, Content-Range',
-        ];
-
+        // Handle preflight OPTIONS request
         if ($request->isMethod('OPTIONS')) {
             $response = new Response('', 204);
         } else {
             $response = $next($request);
         }
 
-        // Ensure we're working with a Response object
+        // Convert to Response object if not already
         if (!$response instanceof Response) {
             $response = new Response($response);
         }
 
-        // Add headers
-        foreach ($headers as $key => $value) {
-            $response->headers->set($key, $value);
-        }
+        // Set CORS headers
+        $response->headers->set('Access-Control-Allow-Origin', '*');
+        $response->headers->set('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+        $response->headers->set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-CSRF-TOKEN, X-XSRF-TOKEN');
+        $response->headers->set('Access-Control-Allow-Credentials', 'true');
+        $response->headers->set('Access-Control-Max-Age', '86400');
+        $response->headers->set('Access-Control-Expose-Headers', 'Content-Length, Content-Range');
 
-        // Ensure headers are not removed
+        // Prevent caching of CORS headers
         $response->headers->set('Vary', 'Origin');
+        $response->headers->set('Cache-Control', 'no-cache, no-store, must-revalidate');
+        $response->headers->set('Pragma', 'no-cache');
+        $response->headers->set('Expires', '0');
 
         return $response;
     }

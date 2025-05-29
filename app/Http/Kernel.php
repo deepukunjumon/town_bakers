@@ -16,6 +16,7 @@ class Kernel extends HttpKernel
     protected $middleware = [
         \App\Http\Middleware\TrustProxies::class,
         \App\Http\Middleware\Cors::class,
+        \App\Http\Middleware\EnsureHeaders::class,
         \Illuminate\Foundation\Http\Middleware\ValidatePostSize::class,
         \Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class,
     ];
@@ -28,6 +29,7 @@ class Kernel extends HttpKernel
     protected $middlewareGroups = [
         'api' => [
             \App\Http\Middleware\Cors::class,
+            \App\Http\Middleware\EnsureHeaders::class,
             \Illuminate\Routing\Middleware\ThrottleRequests::class . ':api',
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
         ],
