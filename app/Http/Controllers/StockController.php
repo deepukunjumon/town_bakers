@@ -229,6 +229,7 @@ class StockController extends Controller
 
         return response()->json([
             'success' => true,
+            'message' => 'Data fetched',
             'date' => $date->format('d-m-Y'),
             'data' => $formattedData,
             'pagination' => [
