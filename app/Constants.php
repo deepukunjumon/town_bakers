@@ -1,5 +1,14 @@
 <?php
 
+if (!defined('ROLES')) {
+    define('ROLES', [
+        'super_admin' => 'super_admin',
+        'admin' => 'admin',
+        'branch' => 'branch',
+        'employee' => 'employee'
+    ]);
+}
+
 if (!defined('DEFAULT_EMPLOYEE_STATUS')) {
     define('DEFAULT_EMPLOYEE_STATUS', 1);
 }

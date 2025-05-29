@@ -6,6 +6,7 @@ use Illuminate\Foundation\Configuration\Middleware;
 use Tymon\JWTAuth\Http\Middleware\Authenticate;
 
 use App\Http\Middleware\CheckPasswordResetMiddleware;
+use App\Http\Middleware\SuperAdminMiddleware;
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\BranchMiddleware;
 use App\Http\Middleware\CorsMiddleware;
@@ -26,6 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->prepend(CorsMiddleware::class);
         $middleware->alias([
             'jwt.auth' => Authenticate::class,
+            'super-admin' => SuperAdminMiddleware::class,
             'admin' => AdminMiddleware::class,
             'branch' => BranchMiddleware::class,
             'check.password.reset' => CheckPasswordResetMiddleware::class,
