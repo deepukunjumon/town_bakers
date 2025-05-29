@@ -9,7 +9,7 @@ use App\Http\Middleware\CheckPasswordResetMiddleware;
 use App\Http\Middleware\SuperAdminMiddleware;
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\BranchMiddleware;
-use App\Http\Middleware\CorsMiddleware;
+use App\Http\Middleware\Cors;
 
 $constantsPath = __DIR__ . '/../app/constants.php';
 if (file_exists($constantsPath)) {
@@ -24,8 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        $middleware->append(\Illuminate\Http\Middleware\HandleCors::class);
-        $middleware->prepend(CorsMiddleware::class);
+        $middleware->prepend(Cors::class);
         $middleware->alias([
             'jwt.auth' => Authenticate::class,
             'super-admin' => SuperAdminMiddleware::class,
