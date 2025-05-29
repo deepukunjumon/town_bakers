@@ -102,8 +102,11 @@ class StockController extends Controller
             ->join('trips', 'stock_items.trip_id', '=', 'trips.id')
             ->whereDate('trips.date', $date)
             ->where('trips.branch_id', $branchId)
-            ->select('items.name as item_name', DB::raw('SUM(stock_items.quantity) as total_quantity'))
-            ->groupBy('items.name')
+            ->select([
+                'items.name as item_name',
+                DB::raw('SUM(stock_items.quantity) as total_quantity')
+            ])
+            ->groupBy('items.id', 'items.name')
             ->orderBy('items.name', 'asc')
             ->paginate($perPage, ['*'], 'page', $page);
 
