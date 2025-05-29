@@ -27,18 +27,10 @@ class RailwayHeaders
         $response->headers->set('X-Railway-Edge', 'railway/europe-west4-drams3a');
         $response->headers->set('X-Railway-Request-Id', $request->header('X-Railway-Request-Id', uniqid()));
 
-        // Set CORS headers that Railway might strip
-        $response->headers->set('Access-Control-Allow-Origin', $request->header('Origin', '*'));
-        $response->headers->set('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-        $response->headers->set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-CSRF-TOKEN, X-XSRF-TOKEN, X-Railway-Request-Id');
-        $response->headers->set('Access-Control-Allow-Credentials', 'true');
-        $response->headers->set('Access-Control-Max-Age', '86400');
-        $response->headers->set('Access-Control-Expose-Headers', 'Content-Length, Content-Range, X-Railway-Request-Id');
-
-        // Ensure content type is set correctly
-        if ($response->headers->get('Content-Type') === 'text/html; charset=UTF-8') {
-            $response->headers->set('Content-Type', 'application/json');
-        }
+        // Set security headers
+        $response->headers->set('X-Content-Type-Options', 'nosniff');
+        $response->headers->set('X-Frame-Options', 'DENY');
+        $response->headers->set('X-XSS-Protection', '1; mode=block');
 
         return $response;
     }

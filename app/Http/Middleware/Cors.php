@@ -29,23 +29,26 @@ class Cors
             $response = new Response($response);
         }
 
-        // Set CORS headers with specific values for Railway
-        $response->headers->set('Access-Control-Allow-Origin', $request->header('Origin', '*'));
-        $response->headers->set('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-        $response->headers->set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-CSRF-TOKEN, X-XSRF-TOKEN, X-Railway-Request-Id');
-        $response->headers->set('Access-Control-Allow-Credentials', 'true');
-        $response->headers->set('Access-Control-Max-Age', '86400');
-        $response->headers->set('Access-Control-Expose-Headers', 'Content-Length, Content-Range, X-Railway-Request-Id');
+        $origin = $request->header('Origin');
 
-        // Set additional headers for Railway
-        $response->headers->set('X-Railway-Edge', 'railway/europe-west4-drams3a');
-        $response->headers->set('X-Railway-Request-Id', $request->header('X-Railway-Request-Id', uniqid()));
+        // Set CORS headers with specific values for Railway
+        $response->headers->set('Access-Control-Allow-Origin', $origin ?: '*');
+        $response->headers->set('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+        $response->headers->set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-CSRF-TOKEN, X-XSRF-TOKEN, X-Railway-Request-Id, X-Railway-Edge');
+        $response->headers->set('Access-Control-Allow-Credentials', 'true');
+        $response->headers->set('Access-Control-Max-Age', '0'); // Disable caching
+        $response->headers->set('Access-Control-Expose-Headers', 'Content-Length, Content-Range, X-Railway-Request-Id, X-Railway-Edge');
 
         // Prevent caching of CORS headers
         $response->headers->set('Vary', 'Origin');
         $response->headers->set('Cache-Control', 'no-cache, no-store, must-revalidate');
         $response->headers->set('Pragma', 'no-cache');
         $response->headers->set('Expires', '0');
+
+        // Ensure content type is set correctly for API responses
+        if ($response->headers->get('Content-Type') === 'text/html; charset=UTF-8') {
+            $response->headers->set('Content-Type', 'application/json');
+        }
 
         return $response;
     }

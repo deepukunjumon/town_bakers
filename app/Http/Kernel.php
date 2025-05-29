@@ -29,9 +29,6 @@ class Kernel extends HttpKernel
      */
     protected $middlewareGroups = [
         'api' => [
-            \App\Http\Middleware\Cors::class,
-            \App\Http\Middleware\RailwayHeaders::class,
-            \App\Http\Middleware\EnsureHeaders::class,
             \Illuminate\Routing\Middleware\ThrottleRequests::class . ':api',
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
         ],
