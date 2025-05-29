@@ -51,14 +51,35 @@ class OrderController extends Controller
             return response()->json(['success' => false, 'message' => 'Branch ID not found'], 404);
         }
 
-        $ordersQuery = Order::with(['employee:id,employee_code,name'])
+        $ordersQuery = Order::with([
+            'employee:id,employee_code,name',
+            'branch:id,code,name'
+        ])
             ->select([
-                'id', 'branch_id', 'employee_id', 'title', 'description', 'remarks',
-                'delivery_date', 'delivery_time', 'customer_name', 'customer_email',
-                'customer_mobile', 'total_amount', 'advance_amount', 'payment_status',
-                'status', 'delivered_at', 'delivered_by', 'created_by', 'created_at', 'updated_at'
+                'id',
+                'branch_id',
+                'employee_id',
+                'title',
+                'description',
+                'remarks',
+                'delivery_date',
+                'delivery_time',
+                'customer_name',
+                'customer_email',
+                'customer_mobile',
+                'total_amount',
+                'advance_amount',
+                'payment_status',
+                'status',
+                'delivered_at',
+                'delivered_by',
+                'created_by',
+                'created_at',
+                'updated_at'
             ])
-            ->where('branch_id', $branchId)
+            ->when($branchId, function ($query) use ($branchId) {
+                return $query->where('branch_id', $branchId);
+            })
             ->when($status !== null, function ($query) use ($status) {
                 return $query->where('status', $status);
             })
@@ -72,12 +93,16 @@ class OrderController extends Controller
 
         if ($search) {
             $ordersQuery->where(function ($query) use ($search) {
-                $query->where('title', 'like', '%' . $search . '%')
-                    ->orWhere('description', 'like', '%' . $search . '%')
-                    ->orWhere('remarks', 'like', '%' . $search . '%')
-                    ->orWhere('customer_name', 'like', '%' . $search . '%')
-                    ->orWhere('customer_email', 'like', '%' . $search . '%')
-                    ->orWhere('customer_mobile', 'like', '%' . $search . '%');
+                $query->where(function ($q) use ($search) {
+                    $q->where('title', 'like', '%' . $search . '%')
+                        ->orWhere('description', 'like', '%' . $search . '%')
+                        ->orWhere('remarks', 'like', '%' . $search . '%');
+                })
+                    ->orWhere(function ($q) use ($search) {
+                        $q->where('customer_name', 'like', '%' . $search . '%')
+                            ->orWhere('customer_email', 'like', '%' . $search . '%')
+                            ->orWhere('customer_mobile', 'like', '%' . $search . '%');
+                    });
             });
         }
 
@@ -124,10 +149,26 @@ class OrderController extends Controller
         // Select only required columns and eager load only needed fields
         $order = Order::with(['employee:id,employee_code,name'])
             ->select([
-                'id', 'branch_id', 'employee_id', 'title', 'description', 'remarks',
-                'delivery_date', 'delivery_time', 'customer_name', 'customer_email',
-                'customer_mobile', 'total_amount', 'advance_amount', 'payment_status',
-                'status', 'delivered_at', 'delivered_by', 'created_by', 'created_at', 'updated_at'
+                'id',
+                'branch_id',
+                'employee_id',
+                'title',
+                'description',
+                'remarks',
+                'delivery_date',
+                'delivery_time',
+                'customer_name',
+                'customer_email',
+                'customer_mobile',
+                'total_amount',
+                'advance_amount',
+                'payment_status',
+                'status',
+                'delivered_at',
+                'delivered_by',
+                'created_by',
+                'created_at',
+                'updated_at'
             ])
             ->where('id', $id)
             ->first();
@@ -142,15 +183,15 @@ class OrderController extends Controller
 
         $order_details = new OrderSummaryResource($order);
 
-        if (!$order_details){
+        if (!$order_details) {
             return response()->json([
                 'success' => false,
                 'error' => 'Could not fetch order details'
             ]);
         }
-        
+
         return response()->json([
-            'success' => true, 
+            'success' => true,
             'message' => 'Order details fetched successfully',
             'order' => $order_details
         ]);
@@ -164,14 +205,30 @@ class OrderController extends Controller
             'branch:id,id,name',
             'creator:id,id,name'
         ])
-        ->select([
-            'id', 'branch_id', 'employee_id', 'title', 'description', 'remarks',
-            'delivery_date', 'delivery_time', 'customer_name', 'customer_email',
-            'customer_mobile', 'total_amount', 'advance_amount', 'payment_status',
-            'status', 'delivered_at', 'delivered_by', 'created_by', 'created_at', 'updated_at'
-        ])
-        ->where('id', $id)
-        ->first();
+            ->select([
+                'id',
+                'branch_id',
+                'employee_id',
+                'title',
+                'description',
+                'remarks',
+                'delivery_date',
+                'delivery_time',
+                'customer_name',
+                'customer_email',
+                'customer_mobile',
+                'total_amount',
+                'advance_amount',
+                'payment_status',
+                'status',
+                'delivered_at',
+                'delivered_by',
+                'created_by',
+                'created_at',
+                'updated_at'
+            ])
+            ->where('id', $id)
+            ->first();
 
         return response()->json(['order' => $order]);
     }
@@ -228,7 +285,7 @@ class OrderController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Order created', 
+            'message' => 'Order created',
             'order_details' => $order
         ]);
     }
@@ -247,7 +304,7 @@ class OrderController extends Controller
             'status' => 'required|in:-1,0,1',
             'delivered_by' => 'nullable|uuid|exists:employees,id'
         ]);
-        
+
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
@@ -316,10 +373,26 @@ class OrderController extends Controller
 
         $ordersQuery = Order::with(['employee:id,employee_code,name', 'branch:id,code,name'])
             ->select([
-                'id', 'branch_id', 'employee_id', 'title', 'description', 'remarks',
-                'delivery_date', 'delivery_time', 'customer_name', 'customer_email',
-                'customer_mobile', 'total_amount', 'advance_amount', 'payment_status',
-                'status', 'delivered_at', 'delivered_by', 'created_by', 'created_at', 'updated_at'
+                'id',
+                'branch_id',
+                'employee_id',
+                'title',
+                'description',
+                'remarks',
+                'delivery_date',
+                'delivery_time',
+                'customer_name',
+                'customer_email',
+                'customer_mobile',
+                'total_amount',
+                'advance_amount',
+                'payment_status',
+                'status',
+                'delivered_at',
+                'delivered_by',
+                'created_by',
+                'created_at',
+                'updated_at'
             ])
             ->when($branchId, function ($query) use ($branchId) {
                 return $query->where('branch_id', $branchId);
@@ -337,12 +410,16 @@ class OrderController extends Controller
 
         if ($search) {
             $ordersQuery->where(function ($query) use ($search) {
-                $query->where('title', 'like', '%' . $search . '%')
-                    ->orWhere('description', 'like', '%' . $search . '%')
-                    ->orWhere('remarks', 'like', '%' . $search . '%')
-                    ->orWhere('customer_name', 'like', '%' . $search . '%')
-                    ->orWhere('customer_email', 'like', '%' . $search . '%')
-                    ->orWhere('customer_mobile', 'like', '%' . $search . '%');
+                $query->where(function ($q) use ($search) {
+                    $q->where('title', 'like', '%' . $search . '%')
+                        ->orWhere('description', 'like', '%' . $search . '%')
+                        ->orWhere('remarks', 'like', '%' . $search . '%');
+                })
+                    ->orWhere(function ($q) use ($search) {
+                        $q->where('customer_name', 'like', '%' . $search . '%')
+                            ->orWhere('customer_email', 'like', '%' . $search . '%')
+                            ->orWhere('customer_mobile', 'like', '%' . $search . '%');
+                    });
             });
         }
 
@@ -397,8 +474,8 @@ class OrderController extends Controller
         ]);
 
         return response()->json([
-            'success' => true, 
-            'message' => 'Order created by admin', 
+            'success' => true,
+            'message' => 'Order created by admin',
             'order_details' => $order
         ]);
     }
@@ -442,10 +519,26 @@ class OrderController extends Controller
 
         $ordersQuery = Order::with(['employee:id,employee_code,name'])
             ->select([
-                'id', 'branch_id', 'employee_id', 'title', 'description', 'remarks',
-                'delivery_date', 'delivery_time', 'customer_name', 'customer_email',
-                'customer_mobile', 'total_amount', 'advance_amount', 'payment_status',
-                'status', 'delivered_at', 'delivered_by', 'created_by', 'created_at', 'updated_at'
+                'id',
+                'branch_id',
+                'employee_id',
+                'title',
+                'description',
+                'remarks',
+                'delivery_date',
+                'delivery_time',
+                'customer_name',
+                'customer_email',
+                'customer_mobile',
+                'total_amount',
+                'advance_amount',
+                'payment_status',
+                'status',
+                'delivered_at',
+                'delivered_by',
+                'created_by',
+                'created_at',
+                'updated_at'
             ])
             ->where('branch_id', $branchId)
             ->when($status !== null, function ($query) use ($status) {
@@ -461,12 +554,16 @@ class OrderController extends Controller
 
         if ($search) {
             $ordersQuery->where(function ($query) use ($search) {
-                $query->where('title', 'like', '%' . $search . '%')
-                    ->orWhere('description', 'like', '%' . $search . '%')
-                    ->orWhere('remarks', 'like', '%' . $search . '%')
-                    ->orWhere('customer_name', 'like', '%' . $search . '%')
-                    ->orWhere('customer_email', 'like', '%' . $search . '%')
-                    ->orWhere('customer_mobile', 'like', '%' . $search . '%');
+                $query->where(function ($q) use ($search) {
+                    $q->where('title', 'like', '%' . $search . '%')
+                        ->orWhere('description', 'like', '%' . $search . '%')
+                        ->orWhere('remarks', 'like', '%' . $search . '%');
+                })
+                    ->orWhere(function ($q) use ($search) {
+                        $q->where('customer_name', 'like', '%' . $search . '%')
+                            ->orWhere('customer_email', 'like', '%' . $search . '%')
+                            ->orWhere('customer_mobile', 'like', '%' . $search . '%');
+                    });
             });
         }
 
