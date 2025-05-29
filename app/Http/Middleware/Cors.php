@@ -17,17 +17,23 @@ class Cors
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $response = $next($request);
+        $headers = [
+            'Access-Control-Allow-Origin'      => '*',
+            'Access-Control-Allow-Methods'     => 'POST, GET, OPTIONS, PUT, PATCH, DELETE',
+            'Access-Control-Allow-Credentials' => 'true',
+            'Access-Control-Max-Age'           => '86400',    // 24 hours
+            'Access-Control-Allow-Headers'     => 'Content-Type, Authorization, X-Requested-With, X-CSRF-TOKEN, X-XSRF-TOKEN'
+        ];
 
         if ($request->isMethod('OPTIONS')) {
-            $response = new Response('', 200);
+            return response()->json('{"method":"OPTIONS"}', 200, $headers);
         }
 
-        $response->headers->set('Access-Control-Allow-Origin', '*');
-        $response->headers->set('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
-        $response->headers->set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-CSRF-TOKEN');
-        $response->headers->set('Access-Control-Allow-Credentials', 'true');
-        $response->headers->set('Access-Control-Max-Age', '86400'); // 24 hours
+        $response = $next($request);
+
+        foreach ($headers as $key => $value) {
+            $response->headers->set($key, $value);
+        }
 
         return $response;
     }
