@@ -3,35 +3,42 @@
 return [
     /*
     |--------------------------------------------------------------------------
-    | Railway App Configuration
+    | Railway Configuration
     |--------------------------------------------------------------------------
     |
-    | This file contains the configuration settings specific to Railway.app
-    | deployment environment.
+    | This file contains the configuration settings for Railway deployment.
     |
     */
 
-    'trust_proxies' => true,
+    'trusted_proxies' => '*',
+    'trusted_hosts' => ['*.railway.app', '*.up.railway.app'],
 
-    'trusted_proxies' => [
-        '10.0.0.0/8',
-        '172.16.0.0/12',
-        '192.168.0.0/16',
-        '127.0.0.1',
-        '::1',
-    ],
-
-    'trusted_hosts' => [
-        '*.railway.app',
-        '*.up.railway.app',
+    'headers' => [
+        'x-railway-edge' => 'railway/europe-west4-drams3a',
+        'x-railway-request-id' => true,
+        'x-content-type-options' => 'nosniff',
+        'x-frame-options' => 'DENY',
+        'x-xss-protection' => '1; mode=block',
     ],
 
     'cors' => [
         'allowed_origins' => ['*'],
         'allowed_methods' => ['*'],
-        'allowed_headers' => ['*'],
-        'exposed_headers' => ['Content-Length', 'Content-Range'],
-        'max_age' => 86400,
+        'allowed_headers' => [
+            'Content-Type',
+            'X-Auth-Token',
+            'Origin',
+            'Authorization',
+            'X-Requested-With',
+            'Accept',
+            'X-Railway-Request-Id',
+            'X-Railway-Edge',
+        ],
+        'exposed_headers' => [
+            'X-Railway-Request-Id',
+            'X-Railway-Edge',
+        ],
+        'max_age' => 0,
         'supports_credentials' => true,
     ],
 ];

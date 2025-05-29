@@ -6,7 +6,7 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class Cors
+class RailwayHeaders
 {
     /**
      * Handle an incoming request.
@@ -17,19 +17,17 @@ class Cors
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Handle preflight OPTIONS request
-        if ($request->isMethod('OPTIONS')) {
-            $response = new Response('', 204);
-        } else {
-            $response = $next($request);
-        }
+        $response = $next($request);
 
-        // Convert to Response object if not already
         if (!$response instanceof Response) {
             $response = new Response($response);
         }
 
-        // Set CORS headers with specific values for Railway
+        // Set Railway-specific headers
+        $response->headers->set('X-Railway-Edge', 'railway/europe-west4-drams3a');
+        $response->headers->set('X-Railway-Request-Id', $request->header('X-Railway-Request-Id', uniqid()));
+
+        // Set CORS headers that Railway might strip
         $response->headers->set('Access-Control-Allow-Origin', $request->header('Origin', '*'));
         $response->headers->set('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
         $response->headers->set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-CSRF-TOKEN, X-XSRF-TOKEN, X-Railway-Request-Id');
@@ -37,15 +35,10 @@ class Cors
         $response->headers->set('Access-Control-Max-Age', '86400');
         $response->headers->set('Access-Control-Expose-Headers', 'Content-Length, Content-Range, X-Railway-Request-Id');
 
-        // Set additional headers for Railway
-        $response->headers->set('X-Railway-Edge', 'railway/europe-west4-drams3a');
-        $response->headers->set('X-Railway-Request-Id', $request->header('X-Railway-Request-Id', uniqid()));
-
-        // Prevent caching of CORS headers
-        $response->headers->set('Vary', 'Origin');
-        $response->headers->set('Cache-Control', 'no-cache, no-store, must-revalidate');
-        $response->headers->set('Pragma', 'no-cache');
-        $response->headers->set('Expires', '0');
+        // Ensure content type is set correctly
+        if ($response->headers->get('Content-Type') === 'text/html; charset=UTF-8') {
+            $response->headers->set('Content-Type', 'application/json');
+        }
 
         return $response;
     }
