@@ -23,23 +23,27 @@ class Cors
             'Access-Control-Allow-Headers' => 'Content-Type, Authorization, X-Requested-With, X-CSRF-TOKEN, X-XSRF-TOKEN',
             'Access-Control-Allow-Credentials' => 'true',
             'Access-Control-Max-Age' => '86400',
+            'Access-Control-Expose-Headers' => 'Content-Length, Content-Range',
         ];
 
         if ($request->isMethod('OPTIONS')) {
-            return response()->json(null, 204, $headers);
-        }
-
-        $response = $next($request);
-
-        if ($response instanceof Response) {
-            foreach ($headers as $key => $value) {
-                $response->headers->set($key, $value);
-            }
+            $response = new Response('', 204);
         } else {
-            foreach ($headers as $key => $value) {
-                $response->header($key, $value);
-            }
+            $response = $next($request);
         }
+
+        // Ensure we're working with a Response object
+        if (!$response instanceof Response) {
+            $response = new Response($response);
+        }
+
+        // Add headers
+        foreach ($headers as $key => $value) {
+            $response->headers->set($key, $value);
+        }
+
+        // Ensure headers are not removed
+        $response->headers->set('Vary', 'Origin');
 
         return $response;
     }
