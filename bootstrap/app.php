@@ -8,6 +8,7 @@ use App\Http\Middleware\CheckPasswordResetMiddleware;
 use App\Http\Middleware\SuperAdminMiddleware;
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\BranchMiddleware;
+use Illuminate\Http\Middleware\HandleCors;
 
 $constantsPath = __DIR__ . '/../app/constants.php';
 if (file_exists($constantsPath)) {
@@ -30,6 +31,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'check.password.reset' => CheckPasswordResetMiddleware::class,
         ]);
     })
-    ->withExceptions(function (Exceptions $exceptions) {
-        // 
-    })->create();
+    ->withMiddleware(function (Middleware $middleware) {
+        $middleware->prepend(HandleCors::class);
+    })
+    ->withExceptions(function (Exceptions $exceptions) {})
+    ->create();
