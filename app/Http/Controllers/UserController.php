@@ -170,6 +170,7 @@ class UserController extends Controller
 
         return response()->json([
             'success' => true,
+            'message' => "Details fetched",
             'user_details' => $userDetails
         ]);
     }
@@ -182,6 +183,7 @@ class UserController extends Controller
      */
     public function updateProfileDetails(Request $request): JsonResponse
     {
+        /** @var \App\Models\User $user */
         $user = Auth::user();
 
         if (!$user) {
