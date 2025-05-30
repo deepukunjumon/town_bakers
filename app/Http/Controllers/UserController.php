@@ -24,9 +24,10 @@ class UserController extends Controller
     public function createUser(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
-            'username' => 'required|string|unique:users,username',
+            'username' => 'required_if:role,admin,branch|string|unique:users,username',
+            'name' => 'required|string',
             'mobile' => 'required|digits:10',
-            'email' => 'required|email|unique:users,email',
+            'email' => 'nullable|email|unique:users,email',
             'role' => 'required|in:admin,branch,employee',
             'status' => 'in:-1,0,1'
         ]);
@@ -44,6 +45,7 @@ class UserController extends Controller
         if ($request->role == ROLES['admin']) {
             $user = User::create([
                 'username' => $request->username,
+                'name' => $request->name,
                 'mobile' => $request->mobile,
                 'email' => $request->email,
                 'password' => DEFAULT_PASSWORD,
@@ -143,6 +145,7 @@ class UserController extends Controller
         $userDetails = [
             'id' => $user->id,
             'username' => $user->username,
+            'name' => $user->name,
             'mobile' => $user->mobile,
             'email' => $user->email,
             'role' => $user->role,
@@ -167,6 +170,7 @@ class UserController extends Controller
 
         return response()->json([
             'success' => true,
+            'message' => "Details fetched",
             'user_details' => $userDetails
         ]);
     }
@@ -179,6 +183,7 @@ class UserController extends Controller
      */
     public function updateProfileDetails(Request $request): JsonResponse
     {
+        /** @var \App\Models\User $user */
         $user = Auth::user();
 
         if (!$user) {
@@ -187,6 +192,7 @@ class UserController extends Controller
 
         $rules = [
             'username' => 'sometimes|string|max:255',
+            'name' => 'sometimes|string|max:255',
             'mobile' => 'sometimes|string|max:20',
             'email' => 'sometimes|email|max:255',
         ];
@@ -206,7 +212,7 @@ class UserController extends Controller
             ], 422);
         }
 
-        $input = $request->only(['username', 'mobile', 'email']);
+        $input = $request->only(['username', 'name', 'mobile', 'email']);
         $branchData = $request->input('branch', []);
 
         $userUpdates = array_filter($input, fn($val) => $val !== null);

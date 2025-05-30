@@ -55,6 +55,7 @@ class BranchController extends Controller
             // Create a user for the branch
             $user = User::create([
                 'username' => $username,
+                'name' => $branch->name,
                 'mobile' => $branch->mobile,
                 'email' => $branch->email,
                 'password' => Hash::make(DEFAULT_PASSWORD),
@@ -64,9 +65,14 @@ class BranchController extends Controller
 
             DB::commit();
 
+            $additional_info = null;
+
             return response()->json([
                 'success' => true,
                 'message' => 'Branch created successfully',
+                'additional_info' => "Credentials for the branch user are:\n" .
+                    "Username: {$username}\n" .
+                    "Password: " . DEFAULT_PASSWORD
             ], 201);
         } catch (\Exception $e) {
             DB::rollBack();

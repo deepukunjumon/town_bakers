@@ -8,6 +8,7 @@ use App\Models\Order;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Resources\OrderSummaryResource;
+use Carbon\Carbon;
 
 class OrderController extends Controller
 {
@@ -50,14 +51,35 @@ class OrderController extends Controller
             return response()->json(['success' => false, 'message' => 'Branch ID not found'], 404);
         }
 
-        $ordersQuery = Order::with(['employee:id,employee_code,name'])
+        $ordersQuery = Order::with([
+            'employee:id,employee_code,name',
+            'branch:id,code,name'
+        ])
             ->select([
-                'id', 'branch_id', 'employee_id', 'title', 'description', 'remarks',
-                'delivery_date', 'delivery_time', 'customer_name', 'customer_email',
-                'customer_mobile', 'total_amount', 'advance_amount', 'payment_status',
-                'status', 'delivered_at', 'delivered_by', 'created_by', 'created_at', 'updated_at'
+                'id',
+                'branch_id',
+                'employee_id',
+                'title',
+                'description',
+                'remarks',
+                'delivery_date',
+                'delivery_time',
+                'customer_name',
+                'customer_email',
+                'customer_mobile',
+                'total_amount',
+                'advance_amount',
+                'payment_status',
+                'status',
+                'delivered_at',
+                'delivered_by',
+                'created_by',
+                'created_at',
+                'updated_at'
             ])
-            ->where('branch_id', $branchId)
+            ->when($branchId, function ($query) use ($branchId) {
+                return $query->where('branch_id', $branchId);
+            })
             ->when($status !== null, function ($query) use ($status) {
                 return $query->where('status', $status);
             })
@@ -71,24 +93,21 @@ class OrderController extends Controller
 
         if ($search) {
             $ordersQuery->where(function ($query) use ($search) {
-                $query->where('title', 'like', '%' . $search . '%')
-                    ->orWhere('description', 'like', '%' . $search . '%')
-                    ->orWhere('remarks', 'like', '%' . $search . '%')
-                    ->orWhere('customer_name', 'like', '%' . $search . '%')
-                    ->orWhere('customer_email', 'like', '%' . $search . '%')
-                    ->orWhere('customer_mobile', 'like', '%' . $search . '%');
+                $query->where(function ($q) use ($search) {
+                    $q->where('title', 'like', '%' . $search . '%')
+                        ->orWhere('description', 'like', '%' . $search . '%')
+                        ->orWhere('remarks', 'like', '%' . $search . '%');
+                })
+                    ->orWhere(function ($q) use ($search) {
+                        $q->where('customer_name', 'like', '%' . $search . '%')
+                            ->orWhere('customer_email', 'like', '%' . $search . '%')
+                            ->orWhere('customer_mobile', 'like', '%' . $search . '%');
+                    });
             });
         }
 
         $orders = $ordersQuery->orderBy('delivery_date', 'asc')
             ->paginate($perPage, ['*'], 'page', $page);
-
-        if ($orders->isEmpty()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'No orders found for the given date range'
-            ]);
-        }
 
         $ordersResource = OrderSummaryResource::collection($orders);
 
@@ -124,15 +143,32 @@ class OrderController extends Controller
         }
 
         $user = Auth::user();
-        $branchId = $user->branch_id;
+        $userRole = $user->role;
+        $branchId = $user->branch_id ?? null;
 
         // Select only required columns and eager load only needed fields
         $order = Order::with(['employee:id,employee_code,name'])
             ->select([
-                'id', 'branch_id', 'employee_id', 'title', 'description', 'remarks',
-                'delivery_date', 'delivery_time', 'customer_name', 'customer_email',
-                'customer_mobile', 'total_amount', 'advance_amount', 'payment_status',
-                'status', 'delivered_at', 'delivered_by', 'created_by', 'created_at', 'updated_at'
+                'id',
+                'branch_id',
+                'employee_id',
+                'title',
+                'description',
+                'remarks',
+                'delivery_date',
+                'delivery_time',
+                'customer_name',
+                'customer_email',
+                'customer_mobile',
+                'total_amount',
+                'advance_amount',
+                'payment_status',
+                'status',
+                'delivered_at',
+                'delivered_by',
+                'created_by',
+                'created_at',
+                'updated_at'
             ])
             ->where('id', $id)
             ->first();
@@ -141,21 +177,21 @@ class OrderController extends Controller
             return response()->json(['success' => false, 'message' => 'Order not found'], 404);
         }
 
-        if ($order->branch_id !== $branchId) {
+        if (($order->branch_id !== $branchId) && (!in_array($userRole, ['admin', 'super_admin']))) {
             return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
         }
 
         $order_details = new OrderSummaryResource($order);
 
-        if (!$order_details){
+        if (!$order_details) {
             return response()->json([
                 'success' => false,
                 'error' => 'Could not fetch order details'
             ]);
         }
-        
+
         return response()->json([
-            'success' => true, 
+            'success' => true,
             'message' => 'Order details fetched successfully',
             'order' => $order_details
         ]);
@@ -169,14 +205,30 @@ class OrderController extends Controller
             'branch:id,id,name',
             'creator:id,id,name'
         ])
-        ->select([
-            'id', 'branch_id', 'employee_id', 'title', 'description', 'remarks',
-            'delivery_date', 'delivery_time', 'customer_name', 'customer_email',
-            'customer_mobile', 'total_amount', 'advance_amount', 'payment_status',
-            'status', 'delivered_at', 'delivered_by', 'created_by', 'created_at', 'updated_at'
-        ])
-        ->where('id', $id)
-        ->first();
+            ->select([
+                'id',
+                'branch_id',
+                'employee_id',
+                'title',
+                'description',
+                'remarks',
+                'delivery_date',
+                'delivery_time',
+                'customer_name',
+                'customer_email',
+                'customer_mobile',
+                'total_amount',
+                'advance_amount',
+                'payment_status',
+                'status',
+                'delivered_at',
+                'delivered_by',
+                'created_by',
+                'created_at',
+                'updated_at'
+            ])
+            ->where('id', $id)
+            ->first();
 
         return response()->json(['order' => $order]);
     }
@@ -233,7 +285,7 @@ class OrderController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Order created', 
+            'message' => 'Order created',
             'order_details' => $order
         ]);
     }
@@ -252,7 +304,7 @@ class OrderController extends Controller
             'status' => 'required|in:-1,0,1',
             'delivered_by' => 'nullable|uuid|exists:employees,id'
         ]);
-        
+
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
@@ -285,26 +337,108 @@ class OrderController extends Controller
         return response()->json(['success' => true, 'message' => 'Order status updated']);
     }
 
-    public function adminIndex(Request $request)
+    /**
+     * List orders for admin (all branches)
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function getAllOrders(Request $request): JsonResponse
     {
-        $query = Order::with([
-            'branch:id,id,name',
-            'employee:id,id,name',
-            'creator:id,id,name'
-        ])
-        ->select([
-            'id', 'branch_id', 'employee_id', 'title', 'description', 'remarks',
-            'delivery_date', 'delivery_time', 'customer_name', 'customer_email',
-            'customer_mobile', 'total_amount', 'advance_amount', 'payment_status',
-            'status', 'delivered_at', 'delivered_by', 'created_by', 'created_at', 'updated_at'
-        ])
-        ->orderBy('delivery_date', 'desc');
+        $validator = Validator::make($request->all(), [
+            'branch_id' => 'nullable|exists:branches,id',
+            'status' => 'nullable|in:-1,0,1',
+            'payment_status' => 'nullable|in:-1,0,1,2',
+            'delivery_date' => 'nullable|date',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date',
+            'page' => 'nullable|integer|min:1',
+            'per_page' => 'nullable|integer|min:1',
+            'search' => 'nullable|string',
+        ]);
 
-        if ($request->has('branch_id')) {
-            $query->where('branch_id', $request->branch_id);
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        return response()->json(['orders' => $query->get()]);
+        $status = $request->input('status');
+        $paymentStatus = $request->input('payment_status');
+        $deliveryDate = $request->input('delivery_date');
+        $startDate = $request->input('start_date') ?: now()->startOfMonth();
+        $endDate = $request->input('end_date') ?: now()->endOfMonth();
+        $branchId = $request->input('branch_id');
+        $page = $request->input('page', 1);
+        $perPage = $request->input('per_page', 10);
+        $search = $request->input('search', '');
+
+        $ordersQuery = Order::with(['employee:id,employee_code,name', 'branch:id,code,name'])
+            ->select([
+                'id',
+                'branch_id',
+                'employee_id',
+                'title',
+                'description',
+                'remarks',
+                'delivery_date',
+                'delivery_time',
+                'customer_name',
+                'customer_email',
+                'customer_mobile',
+                'total_amount',
+                'advance_amount',
+                'payment_status',
+                'status',
+                'delivered_at',
+                'delivered_by',
+                'created_by',
+                'created_at',
+                'updated_at'
+            ])
+            ->when($branchId, function ($query) use ($branchId) {
+                return $query->where('branch_id', $branchId);
+            })
+            ->when($status !== null, function ($query) use ($status) {
+                return $query->where('status', $status);
+            })
+            ->when($paymentStatus !== null, function ($query) use ($paymentStatus) {
+                return $query->where('payment_status', $paymentStatus);
+            })
+            ->when($deliveryDate, function ($query) use ($deliveryDate) {
+                return $query->where('delivery_date', $deliveryDate);
+            })
+            ->whereBetween('delivery_date', [$startDate, $endDate]);
+
+        if ($search) {
+            $ordersQuery->where(function ($query) use ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('title', 'like', '%' . $search . '%')
+                        ->orWhere('description', 'like', '%' . $search . '%')
+                        ->orWhere('remarks', 'like', '%' . $search . '%');
+                })
+                    ->orWhere(function ($q) use ($search) {
+                        $q->where('customer_name', 'like', '%' . $search . '%')
+                            ->orWhere('customer_email', 'like', '%' . $search . '%')
+                            ->orWhere('customer_mobile', 'like', '%' . $search . '%');
+                    });
+            });
+        }
+
+        $orders = $ordersQuery->orderBy('delivery_date', 'asc')
+            ->paginate($perPage, ['*'], 'page', $page);
+
+        $ordersResource = OrderSummaryResource::collection($orders);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Orders fetched successfully',
+            'orders' => $ordersResource,
+            'pagination' => [
+                'current_page' => $orders->currentPage(),
+                'last_page' => $orders->lastPage(),
+                'per_page' => $orders->perPage(),
+                'total' => $orders->total(),
+            ]
+        ]);
     }
 
     public function adminStore(Request $request)
@@ -340,9 +474,121 @@ class OrderController extends Controller
         ]);
 
         return response()->json([
-            'success' => true, 
-            'message' => 'Order created by admin', 
+            'success' => true,
+            'message' => 'Order created by admin',
             'order_details' => $order
+        ]);
+    }
+
+    /**
+     * List orders for a specific branch (Admin only)
+     * 
+     * @param Request $request
+     * @param string $branchId
+     * @return JsonResponse
+     */
+    public function getOrdersByBranchId(Request $request, $branchId): JsonResponse
+    {
+        $validator = Validator::make(
+            array_merge($request->all(), ['branch_id' => $branchId]),
+            [
+                'branch_id' => 'required|uuid|exists:branches,id',
+                'status' => 'nullable|in:-1,0,1',
+                'payment_status' => 'nullable|in:-1,0,1,2',
+                'delivery_date' => 'nullable|date',
+                'start_date' => 'nullable|date',
+                'end_date' => 'nullable|date',
+                'page' => 'nullable|integer|min:1',
+                'per_page' => 'nullable|integer|min:1',
+                'search' => 'nullable|string',
+            ]
+        );
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $status = $request->input('status');
+        $paymentStatus = $request->input('payment_status');
+        $deliveryDate = $request->input('delivery_date');
+        $startDate = $request->input('start_date') ?: now()->startOfMonth();
+        $endDate = $request->input('end_date') ?: now()->endOfMonth();
+        $page = $request->input('page', 1);
+        $perPage = $request->input('per_page', 10);
+        $search = $request->input('search', '');
+
+        $ordersQuery = Order::with(['employee:id,employee_code,name'])
+            ->select([
+                'id',
+                'branch_id',
+                'employee_id',
+                'title',
+                'description',
+                'remarks',
+                'delivery_date',
+                'delivery_time',
+                'customer_name',
+                'customer_email',
+                'customer_mobile',
+                'total_amount',
+                'advance_amount',
+                'payment_status',
+                'status',
+                'delivered_at',
+                'delivered_by',
+                'created_by',
+                'created_at',
+                'updated_at'
+            ])
+            ->where('branch_id', $branchId)
+            ->when($status !== null, function ($query) use ($status) {
+                return $query->where('status', $status);
+            })
+            ->when($paymentStatus !== null, function ($query) use ($paymentStatus) {
+                return $query->where('payment_status', $paymentStatus);
+            })
+            ->when($deliveryDate, function ($query) use ($deliveryDate) {
+                return $query->where('delivery_date', $deliveryDate);
+            })
+            ->whereBetween('delivery_date', [$startDate, $endDate]);
+
+        if ($search) {
+            $ordersQuery->where(function ($query) use ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('title', 'like', '%' . $search . '%')
+                        ->orWhere('description', 'like', '%' . $search . '%')
+                        ->orWhere('remarks', 'like', '%' . $search . '%');
+                })
+                    ->orWhere(function ($q) use ($search) {
+                        $q->where('customer_name', 'like', '%' . $search . '%')
+                            ->orWhere('customer_email', 'like', '%' . $search . '%')
+                            ->orWhere('customer_mobile', 'like', '%' . $search . '%');
+                    });
+            });
+        }
+
+        $orders = $ordersQuery->orderBy('delivery_date', 'asc')
+            ->paginate($perPage, ['*'], 'page', $page);
+
+        if ($orders->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No orders found for the given date range'
+            ]);
+        }
+
+        $ordersResource = OrderSummaryResource::collection($orders);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Orders fetched successfully',
+            'orders' => $ordersResource,
+            'pagination' => [
+                'current_page' => $orders->currentPage(),
+                'last_page' => $orders->lastPage(),
+                'per_page' => $orders->perPage(),
+                'total' => $orders->total(),
+            ]
         ]);
     }
 }

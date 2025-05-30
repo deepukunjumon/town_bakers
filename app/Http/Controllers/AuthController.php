@@ -10,6 +10,12 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use Tymon\JWTAuth\Exceptions\TokenExpiredException;
+use Illuminate\Support\Facades\Password;
+use App\Models\User;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\PasswordResetMail;
 
 class AuthController extends Controller
 {
@@ -27,7 +33,7 @@ class AuthController extends Controller
         if (!$token = Auth::guard('api')->attempt($credentials)) {
             return response()->json([
                 'success' => false,
-                'error' => 'Invalid code or password'
+                'error' => 'Invalid Credentials'
             ], 401);
         }
 
@@ -42,7 +48,8 @@ class AuthController extends Controller
             'password_reset_required' => $passwordResetRequired,
             'user' => [
                 'id' => $user->id,
-                'name' => $user->username ?? 'Unknown User',
+                'name' => $user->name,
+                'role' => $user->role
             ]
         ]);
     }
@@ -147,6 +154,56 @@ class AuthController extends Controller
             return response()->json(['error' => 'Token expired'], 401);
         } catch (JWTException $e) {
             return response()->json(['error' => 'Token could not be parsed'], 500);
+        }
+    }
+
+    /**
+     * Send password reset link.
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function forgotPassword(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email|exists:users,email',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $user = User::where('email', $request->email)->first();
+        
+        // Generate a random token
+        $token = Str::random(64);
+        
+        // Store the token in password_reset_tokens table
+        DB::table('password_reset_tokens')->updateOrInsert(
+            ['email' => $request->email],
+            [
+                'token' => Hash::make($token),
+                'created_at' => now()
+            ]
+        );
+
+        try {
+            // Send the password reset email
+            Mail::to($request->email)->send(new PasswordResetMail($token, $request->email));
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Password reset link sent to your email'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to send password reset email',
+                'error' => $e->getMessage()
+            ], 500);
         }
     }
 }

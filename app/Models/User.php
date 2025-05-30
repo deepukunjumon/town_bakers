@@ -6,8 +6,8 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Tymon\JWTAuth\Contracts\JWTSubject;
-use Ramsey\Uuid\Guid\Guid;
 use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Model;
 
 class User extends Authenticatable implements JWTSubject
 {
@@ -22,18 +22,21 @@ class User extends Authenticatable implements JWTSubject
     {
         if (in_array($this->role, [ROLES['super_admin'], ROLES['admin']])) {
             return [
+                'name' => $this->name,
                 'role' => $this->role,
                 'branch_id' => null
             ];
         }
         if ($this->role == 'branch') {
             return [
+                'name' => $this->name,
                 'role' => $this->role,
                 'branch_id' => $this->branch_id
             ];
         }
 
         return [
+            'name' => $this->name,
             'role' => $this->role,
             'branch_id' => $this->branch_id ?? null
         ];
@@ -46,6 +49,7 @@ class User extends Authenticatable implements JWTSubject
 
     protected $fillable = [
         'username',
+        'name',
         'mobile',
         'email',
         'password',

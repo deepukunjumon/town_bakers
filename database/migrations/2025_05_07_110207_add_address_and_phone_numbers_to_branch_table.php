@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::table('branches', function (Blueprint $table) {
             $table->string('address')->after('name');
             $table->string('mobile')->after('address');
+            $table->string('email')->after('mobile');
             $table->string('phone')->nullable()->after('mobile');
         });
     }
@@ -24,7 +25,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('branches', function (Blueprint $table) {
-            $table->dropColumn(['address', 'phone', 'mobile']);
+            $table->dropColumn(['address', 'phone', 'mobile', 'email']);
         });
     }
 };

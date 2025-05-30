@@ -14,6 +14,9 @@ return new class extends Migration
         Schema::create('users', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('username')->unique()->index();
+            $table->string('name');
+            $table->string('mobile')->nullable();
+            $table->string('email')->nullable()->unique();
             $table->string('password');
             $table->enum('role', ['super_admin', 'admin', 'branch'])->default('branch');
             $table->tinyInteger('status')->default(1)->comment('1 = active, 0 = inactive, -1 = deleted');
@@ -39,6 +42,9 @@ return new class extends Migration
         DB::table('users')->insert([
             'id' => Str::uuid(),
             'username' => 'superadmin',
+            'name' => 'Super Admin',
+            'mobile' => null,
+            'email' => null,
             'password' => Hash::make(DEFAULT_PASSWORD),
             'role' => ROLES['super_admin'],
             'status' => DEFAULT_STATUSES['active'],

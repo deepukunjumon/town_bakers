@@ -6,6 +6,7 @@ use App\Models\Items;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Validator;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class ItemsController extends Controller
 {
@@ -44,6 +45,81 @@ class ItemsController extends Controller
         ], 201);
     }
 
+        /**
+     * Import items from an Excel file.
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function importItems(Request $request): JsonResponse
+    {
+        $fileValidate = Validator::make($request->all(), [
+            'file' => 'required|file|mimes:xlsx,csv',
+        ]);
+
+        if ($fileValidate->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $fileValidate->errors(),
+            ], 422);
+        }
+
+        $file = $request->file('file');
+        $spreadsheet = IOFactory::load($file->getPathname());
+        $sheet = $spreadsheet->getActiveSheet();
+        $rows = $sheet->toArray();
+
+        $errors = [];
+        $imported = 0;
+
+        foreach ($rows as $index => $row) {
+            if ($index === 0 || empty($row[0])) continue;
+
+            $name = trim($row[0]);
+            $category = trim($row[1]);
+            $description = trim($row[2]);
+
+            $validator = Validator::make([
+                'name' => $name,
+                'category' => $category,
+                'description' => $description ? $description : null,
+            ], [
+                'name' => 'required|string',
+                'category' => 'required|string',
+                'description' => 'nullable|string',
+            ]);
+
+            if ($validator->fails()) {
+                $errors[] = [
+                    'row' => $index + 1,
+                    'errors' => $validator->errors(),
+                ];
+                continue;
+            }
+
+            try {
+                Items::create([
+                    'name' => $name,
+                    'description' => $description ?: null,
+                    'category' => $category,
+                    'status' => DEFAULT_ITEM_STATUS
+                ]);
+                $imported++;
+            } catch (\Exception $e) {
+                $errors[] = [
+                    'row' => $index + 1,
+                    'errors' => ['database' => 'Failed to create item: ' . $e->getMessage()],
+                ];
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => "$imported items imported successfully.",
+            'errors' => $errors,
+        ]);
+    }
+
     /**
      * Get list of items
      * 
@@ -66,12 +142,15 @@ class ItemsController extends Controller
             $query->where('name', 'like', "%{$search}%");
         }
 
-        $items = $query->paginate($perPage, ['id', 'name', 'status'], 'page', $page);
+        $query->orderBy('name', 'asc');
+
+        $items = $query->paginate($perPage, ['id', 'name', 'category', 'status'], 'page', $page);
 
         $transformed = $items->getCollection()->transform(function ($item) {
             return [
                 'id' => $item->id,
                 'name' => $item->name,
+                'category' => $item->category,
                 'status' => $item->status,
             ];
         });
@@ -95,6 +174,7 @@ class ItemsController extends Controller
     public function getMinimalActiveItems(): JsonResponse
     {
         $items = Items::where('status', DEFAULT_STATUSES['active'])
+            ->orderby('name', 'desc')
             ->get(['id', 'name']);
 
         return response()->json([

@@ -7,6 +7,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\ItemsController;
 use App\Http\Controllers\StockController;
+use App\Http\Controllers\MailController;
 use App\Http\Controllers\DesignationController;
 use App\Http\Controllers\OrderController;
 use App\Http\Middleware\CheckPasswordResetMiddleware;
@@ -22,6 +23,9 @@ Route::get('/ping', function () {
 // Login route (public)
 Route::post('/login', [AuthController::class, 'login']);
 
+// Password reset routes (public)
+Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
+Route::post('/reset-password', [AuthController::class, 'resetPasswordWithToken']);
 Route::middleware('auth:api')->post('/password/reset', [AuthController::class, 'resetPassword']);
 
 // Authenticated routes
@@ -37,6 +41,7 @@ Route::middleware(['jwt.auth', 'check.password.reset'])->group(function () {
     Route::prefix('/super-admin')->middleware(SuperAdminMiddleware::class)->group(function () {
         Route::get('/dashboard/stats', [DashboardController::class, 'getSuperAdminDashboardStats']);
         Route::post('/create/user', [UserController::class, 'createUser']);
+        Route::post('/test-mail', [MailController::class, 'testMail']);
     });
 
     // Admin-only routes
@@ -51,10 +56,13 @@ Route::middleware(['jwt.auth', 'check.password.reset'])->group(function () {
         Route::put('/branch/update/{branch_id}', [BranchController::class, 'updateBranch']);
 
         Route::get('/all-employees', [EmployeeController::class, 'getAllEmployees']);
-        Route::put('/employee/{employee_id}', [EmployeeController::class, 'updateEmployee']);
         Route::get('/employees/{branch_id}', [EmployeeController::class, 'getEmployeesByBranch']);
 
         Route::post('/branchwise/stock/summary', [StockController::class, 'branchwiseStockSummary']);
+
+        // Order routes
+        Route::get('/orders', [OrderController::class, 'getAllOrders']);
+        Route::get('/orders/branch/{branch_id}', [OrderController::class, 'getOrdersByBranchID']);
     });
 
     // Branch-only routes (NOT affected by AdminMiddleware)
@@ -68,7 +76,6 @@ Route::middleware(['jwt.auth', 'check.password.reset'])->group(function () {
         //Order routes
         Route::post('/create/order', [OrderController::class, 'createOrder']);
         Route::get('/orders', [OrderController::class, 'getOrdersForBranch']);
-        Route::get('/order/{id}', [OrderController::class, 'getOrderDetailsByID']);
 
         //Stock routes
         Route::post('/stock/summary', [StockController::class, 'getItemsByDate']);
@@ -76,6 +83,7 @@ Route::middleware(['jwt.auth', 'check.password.reset'])->group(function () {
 
     // General authenticated routes (available to all roles)
     Route::post('/create/item', [ItemsController::class, 'createItem']);
+    Route::post('/import/items', [ItemsController::class, 'importItems']);
     Route::get('/items', [ItemsController::class, 'getAllItems']);
     Route::get('/items/minimal', [ItemsController::class, 'getMinimalActiveItems']);
     Route::post('/item/update-status', [ItemsController::class, 'updateItemStatus']);
@@ -87,7 +95,10 @@ Route::middleware(['jwt.auth', 'check.password.reset'])->group(function () {
 
     Route::get('/branches/minimal', [BranchController::class, 'getMinimalBranches']);
     Route::get('/employees/minimal', [EmployeeController::class, 'getMinimalEmployees']);
+    Route::put('/employee/{employee_id}', [EmployeeController::class, 'updateEmployeeDetails']);
     Route::post('/employee/update-status', [EmployeeController::class, 'updateEmployeeStatus']);
+
+    Route::get('/order/{id}', [OrderController::class, 'getOrderDetailsByID']);
 
     Route::post('/stock/add', [StockController::class, 'addStock']);
     Route::get('/stock/trip/{trip_id}', [StockController::class, 'getTripDetails']);

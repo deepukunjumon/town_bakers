@@ -102,8 +102,11 @@ class StockController extends Controller
             ->join('trips', 'stock_items.trip_id', '=', 'trips.id')
             ->whereDate('trips.date', $date)
             ->where('trips.branch_id', $branchId)
-            ->select('items.name as item_name', DB::raw('SUM(stock_items.quantity) as total_quantity'))
-            ->groupBy('items.name')
+            ->select([
+                'items.name as item_name',
+                DB::raw('SUM(stock_items.quantity) as total_quantity')
+            ])
+            ->groupBy('items.id', 'items.name')
             ->orderBy('items.name', 'asc')
             ->paginate($perPage, ['*'], 'page', $page);
 
@@ -161,6 +164,7 @@ class StockController extends Controller
             'type' => 'required_if:export,true|in:excel,pdf',
             'page' => 'nullable|integer|min:1',
             'per_page' => 'nullable|integer|min:1',
+            'q' => 'nullable|string|max:255',
         ]);
 
         if ($validator->fails()) {
@@ -180,12 +184,18 @@ class StockController extends Controller
         $branch_code = $branch->code ?? 'Unknown Branch';
         $branch_address = $branch->address ?? 'Unknown Branch';
 
-        $items = DB::table('stock_items')
+        $query = DB::table('stock_items')
             ->join('items', 'stock_items.item_id', '=', 'items.id')
             ->join('trips', 'stock_items.trip_id', '=', 'trips.id')
             ->whereDate('trips.date', $date)
-            ->where('trips.branch_id', $branch_id)
-            ->select(
+            ->where('trips.branch_id', $branch_id);
+
+        if ($request->filled('q')) {
+            $searchTerm = $request->input('q');
+            $query->where('items.name', 'like', '%' . $searchTerm . '%');
+        }
+
+        $items = $query->select(
                 'stock_items.item_id',
                 'items.name as item_name',
                 DB::raw('SUM(stock_items.quantity) as total_quantity')
@@ -226,6 +236,7 @@ class StockController extends Controller
 
         return response()->json([
             'success' => true,
+            'message' => 'Data fetched',
             'date' => $date->format('d-m-Y'),
             'data' => $formattedData,
             'pagination' => [
