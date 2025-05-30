@@ -11,6 +11,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Services\EmployeesExportService;
+use App\Models\AuditLog;
+use Illuminate\Support\Str;
 
 
 class EmployeeController extends Controller
@@ -118,6 +120,9 @@ class EmployeeController extends Controller
 
         $errors = [];
         $imported = 0;
+        $importedEmployees = [];
+
+        Employee::startBulkOperation();
 
         foreach ($rows as $index => $row) {
             if ($index === 0 || empty($row[0])) continue;
@@ -153,7 +158,7 @@ class EmployeeController extends Controller
                 continue;
             }
 
-            Employee::create([
+            $employee = Employee::create([
                 'employee_code' => $employeeCode,
                 'name' => $name,
                 'mobile' => $mobile,
@@ -163,6 +168,27 @@ class EmployeeController extends Controller
             ]);
 
             $imported++;
+            $importedEmployees[] = $employee->id;
+        }
+
+        Employee::endBulkOperation();
+
+        // Create a single audit log entry for the import
+        if ($imported > 0) {
+            AuditLog::create([
+                'id' => (string) Str::uuid(),
+                'action' => AUDITLOG_ACTIONS['IMPORT'],
+                'table' => 'employees',
+                'record_id' => $importedEmployees[0],
+                'description' => "Imported {$imported} employees from file: {$file->getClientOriginalName()}",
+                'comments' => json_encode([
+                    'total_imported' => $imported,
+                    'imported_ids' => $importedEmployees,
+                    'file_name' => $file->getClientOriginalName(),
+                    'errors' => $errors
+                ]),
+                'performed_by' => Auth::id()
+            ]);
         }
 
         return response()->json([

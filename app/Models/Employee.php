@@ -7,10 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 use App\Models\Designations;
 use App\Models\Branch;
+use App\Traits\HasAuditLogs;
 
 class Employee extends Model
 {
-    use HasFactory;
+    use HasFactory, HasAuditLogs;
 
     protected $fillable = [
         'id',
