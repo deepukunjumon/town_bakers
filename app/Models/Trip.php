@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use App\Traits\HasAuditLogs;
 
 class Trip extends Model
 {
-    use HasUuids;
+    use HasUuids, HasAuditLogs;
 
     protected $fillable = ['branch_id', 'employee_id', 'date'];
 

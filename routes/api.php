@@ -46,6 +46,7 @@ Route::middleware(['check.token'])->group(function () {
                 Route::post('/test-mail', [MailController::class, 'testMail']);
 
                 Route::get('/logs/audit-logs', [AuditLogController::class, 'getAuditLogs']);
+                Route::get('/list/tables', [AuditLogController::class, 'getLoggableTables']);
             });
 
             // Admin-only routes

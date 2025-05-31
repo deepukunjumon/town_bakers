@@ -6,10 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Str;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Tymon\JWTAuth\Contracts\JWTSubject;
+use App\Traits\HasAuditLogs;
 
 class Branch extends Authenticatable implements JWTSubject
 {
-    use HasFactory;
+    use HasFactory, HasAuditLogs;
 
     public function users()
     {

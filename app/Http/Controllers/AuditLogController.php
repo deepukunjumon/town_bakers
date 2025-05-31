@@ -132,4 +132,36 @@ class AuditLogController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Get available tables for audit logs filtering
+     * 
+     * @return JsonResponse
+     */
+    public function getLoggableTables(): JsonResponse
+    {
+        try {
+            $tables = AuditLog::select('table')
+                ->distinct()
+                ->orderBy('table')
+                ->get()
+                ->map(function ($log) {
+                    return [
+                        'id' => $log->table,
+                        'name' => ucwords(str_replace('_', ' ', $log->table))
+                    ];
+                });
+
+            return response()->json([
+                'success' => true,
+                'tables' => $tables
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve audit log tables.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }
