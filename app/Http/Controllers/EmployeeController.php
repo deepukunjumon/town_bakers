@@ -456,7 +456,7 @@ class EmployeeController extends Controller
         $page = $request->input('page', 1);
         $search = $request->input('q', '');
         $status = $request->input('status');
-        $branchCode = $request->input('branch_code');
+        $branchId = $request->input('branch_id');
         $type = $request->input('type');
         $isExport = $request->boolean('export');
 
@@ -466,9 +466,9 @@ class EmployeeController extends Controller
             $query->where('status', $status);
         }
 
-        if ($branchCode) {
-            $query->whereHas('branch', function ($q) use ($branchCode) {
-                $q->where('code', $branchCode);
+        if ($branchId) {
+            $query->whereHas('branch', function ($q) use ($branchId) {
+                $q->where('id', $branchId);
             });
         }
 
@@ -531,6 +531,7 @@ class EmployeeController extends Controller
                     'name' => $employee->name,
                     'mobile' => $employee->mobile,
                     'status' => $employee->status,
+                    'branch_id' => optional($employee->branch)->id ?? 'N/A',
                     'branch_code' => optional($employee->branch)->code ?? 'N/A',
                     'branch_name' => optional($employee->branch)->name ?? 'N/A',
                     'designation' => optional($employee->designation)->designation ?? 'N/A',
