@@ -48,5 +48,8 @@ if (!defined('AUDITLOG_ACTIONS')) {
         'DELETE' => 'Delete',
 
         'IMPORT' => 'Import',
+
+        'ENABLE' => 'Enable',
+        'DISABLE' => 'Disable',
     ]);
 }
