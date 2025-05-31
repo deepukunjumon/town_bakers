@@ -272,7 +272,8 @@ class EmployeeController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->where('employee_code', 'like', "%$search%")
                     ->orWhere('name', 'like', "%$search%")
-                    ->orWhere('designation', 'like', "%$search%");
+                    ->orWhere('designation', 'like', "%$search%")
+                    ->orWhere('mobile', 'like', "%$search%");
             });
         }
 
@@ -353,16 +354,36 @@ class EmployeeController extends Controller
                 ], 404);
             }
 
+            $validator = Validator::make($request->all(), [
+                'per_page' => 'nullable|integer|min:1',
+                'page' => 'nullable|integer|min:1',
+                'search' => 'nullable|string',
+                'status' => 'nullable|integer|in:-1,0,1',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
             $perPage = $request->input('per_page', 10);
             $page = $request->input('page', 1);
             $search = $request->input('search', '');
+            $status = $request->input('status');
 
             $query = $branch->employees()->with('designation')->orderBy('employee_code', 'asc');
+
+            if (!is_null($status)) {
+                $query->where('status', $status);
+            }
 
             if ($search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('employee_code', 'like', "%$search%")
                         ->orWhere('name', 'like', "%$search%")
+                        ->orwhere('mobile', 'like', "%$search%")
                         ->orWhereHas('designation', function ($q) use ($search) {
                             $q->where('designation', 'like', "%$search%");
                         });
