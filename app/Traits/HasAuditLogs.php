@@ -43,6 +43,17 @@ trait HasAuditLogs
         $user = Auth::user();
         $description = $this->generateAuditDescription($action);
         
+        // If this is a status change, override the action
+        if ($action === AUDITLOG_ACTIONS['UPDATE'] && $this->isDirty('status') && $this->status === DEFAULT_STATUSES['deleted']) {
+            $action = AUDITLOG_ACTIONS['DELETE'];
+        }
+        if ($action === AUDITLOG_ACTIONS['UPDATE'] && $this->isDirty('status') && $this->status === DEFAULT_STATUSES['active']) {
+            $action = AUDITLOG_ACTIONS['ENABLE'];
+        }
+        if ($action === AUDITLOG_ACTIONS['UPDATE'] && $this->isDirty('status') && $this->status === DEFAULT_STATUSES['inactive']) {
+            $action = AUDITLOG_ACTIONS['DISABLE'];
+        }
+        
         AuditLog::create([
             'id' => (string) Str::uuid(),
             'action' => $action,
@@ -64,6 +75,18 @@ trait HasAuditLogs
             case AUDITLOG_ACTIONS['UPDATE']:
                 $changes = $this->getDirty();
                 $changedFields = array_keys($changes);
+                
+                // Check if this is a status change to deleted
+                if (isset($changes['status']) && $changes['status'] === DEFAULT_STATUSES['deleted']) {
+                    return "Record deleted from {$tableName}";
+                }
+                if (isset($changes['status']) && $changes['status'] === DEFAULT_STATUSES['inactive']) {
+                    return "Record disabled from {$tableName}";
+                }
+                if (isset($changes['status']) && $changes['status'] === DEFAULT_STATUSES['active']) {
+                    return "Record enabled from {$tableName}";
+                }
+                
                 return "Record updated in {$tableName}: " . implode(', ', $changedFields);
             case AUDITLOG_ACTIONS['DELETE']:
                 return "Record deleted from {$tableName}";
