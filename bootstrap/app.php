@@ -8,7 +8,6 @@ use App\Http\Middleware\CheckPasswordResetMiddleware;
 use App\Http\Middleware\SuperAdminMiddleware;
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\BranchMiddleware;
-use App\Http\Middleware\CheckTokenMiddleware;
 
 $constantsPath = __DIR__ . '/../app/constants.php';
 if (file_exists($constantsPath)) {
@@ -29,7 +28,6 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => AdminMiddleware::class,
             'branch' => BranchMiddleware::class,
             'check.password.reset' => CheckPasswordResetMiddleware::class,
-            'check.token' => CheckTokenMiddleware::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
