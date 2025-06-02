@@ -98,6 +98,7 @@ Route::middleware(['jwt.auth'])->group(function () {
 
         Route::get('/branches/minimal', [BranchController::class, 'getMinimalBranches']);
         Route::get('/employees/minimal', [EmployeeController::class, 'getMinimalEmployees']);
+        Route::get('/employee/{id}', [EmployeeController::class, 'getEmployeeDetails']);
         Route::put('/employee/{employee_id}', [EmployeeController::class, 'updateEmployeeDetails']);
         Route::post('/employee/update-status', [EmployeeController::class, 'updateEmployeeStatus']);
 

@@ -199,6 +199,42 @@ class EmployeeController extends Controller
     }
 
     /**
+     * Get employee details.
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function getEmployeeDetails(Request $request, $id): JsonResponse
+    {
+        $validator = Validator::make(
+            ['id' => $request->route('id')],
+            ['id' => 'required|uuid|exists:employees,id']
+        );
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $employee = Employee::with(['branch', 'designation'])->find($id);
+        
+        return response()->json([
+            'success' => true,
+            'employee' => [
+                'id' => $employee->id,
+                'employee_code' => $employee->employee_code,
+                'name' => $employee->name,
+                'mobile' => $employee->mobile,
+                'status' => $employee->status,
+                'branch_id' => $employee->branch_id,
+                'branch_name' => optional($employee->branch)->name ?? 'N/A',
+                'branch_code' => optional($employee->branch)->code ?? 'N/A',
+                'designation_id' => $employee->designation_id,
+                'designation' => optional($employee->designation)->designation ?? 'N/A'
+            ]
+        ]);
+    }
+
+    /**
      * Update employee details.
      *
      * @param Request $request
