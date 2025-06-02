@@ -6,7 +6,11 @@ header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-W
 header('Access-Control-Allow-Credentials: true');
 header('Access-Control-Max-Age: 86400');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-header('Content-Type: application/json; charset=UTF-8');
+
+// Only set JSON content type if it's not a file download
+if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) !== 'xmlhttprequest') {
+    header('Content-Type: application/json; charset=UTF-8');
+}
 
 use Illuminate\Foundation\Application;
 use Illuminate\Http\Request;
