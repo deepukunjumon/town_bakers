@@ -509,9 +509,9 @@ class EmployeeController extends Controller
                 ];
             }
 
-            $branch_name = $branchCode ? optional($allEmployees->first()->branch)->name ?? 'All Branches' : 'All Branches';
-            $branch_code = $branchCode ?? 'ALL';
-            $branch_address = $branchCode ? optional($allEmployees->first()->branch)->address ?? 'N/A' : 'N/A';
+            $branch_name = $branchId ? optional($allEmployees->first()->branch)->name ?? 'All Branches' : 'All Branches';
+            $branch_code = $branchId ? optional($allEmployees->first()->branch)->code ?? 'ALL' : 'ALL';
+            $branch_address = $branchId ? optional($allEmployees->first()->branch)->address ?? 'N/A' : 'N/A';
             $date = now();
 
             if ($type === 'excel') {
@@ -521,6 +521,11 @@ class EmployeeController extends Controller
             if ($type === 'pdf') {
                 return EmployeesExportService::exportPdf($exportEmployees, $branch_name, $branch_code, $branch_address, $date, $columns);
             }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid export type specified'
+            ], 400);
         } else {
             $employees = $query->paginate($perPage, ['id', 'employee_code', 'name', 'mobile', 'status', 'branch_id', 'designation_id'], 'page', $page);
 
