@@ -3,9 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Items;
+use App\Models\AuditLog;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class ItemsController extends Controller
@@ -45,7 +48,7 @@ class ItemsController extends Controller
         ], 201);
     }
 
-        /**
+    /**
      * Import items from an Excel file.
      *
      * @param Request $request
@@ -71,6 +74,10 @@ class ItemsController extends Controller
 
         $errors = [];
         $imported = 0;
+        $importedItems = [];
+
+        // Start bulk operation to prevent individual audit logs
+        Items::startBulkOperation();
 
         foreach ($rows as $index => $row) {
             if ($index === 0 || empty($row[0])) continue;
@@ -98,19 +105,41 @@ class ItemsController extends Controller
             }
 
             try {
-                Items::create([
+                $item = Items::create([
                     'name' => $name,
                     'description' => $description ?: null,
                     'category' => $category,
                     'status' => DEFAULT_ITEM_STATUS
                 ]);
                 $imported++;
+                $importedItems[] = $item->id;
             } catch (\Exception $e) {
                 $errors[] = [
                     'row' => $index + 1,
                     'errors' => ['database' => 'Failed to create item: ' . $e->getMessage()],
                 ];
             }
+        }
+
+        // End bulk operation
+        Items::endBulkOperation();
+
+        // Create a single audit log entry for the import
+        if ($imported > 0) {
+            AuditLog::create([
+                'id' => (string) Str::uuid(),
+                'action' => AUDITLOG_ACTIONS['IMPORT'],
+                'table' => 'items',
+                'record_id' => $importedItems[0],
+                'description' => "Imported {$imported} items from file: {$file->getClientOriginalName()}",
+                'comments' => json_encode([
+                    'total_imported' => $imported,
+                    'imported_ids' => $importedItems,
+                    'file_name' => $file->getClientOriginalName(),
+                    'errors' => $errors
+                ]),
+                'performed_by' => Auth::id()
+            ]);
         }
 
         return response()->json([

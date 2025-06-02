@@ -11,6 +11,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use App\Services\EmployeesExportService;
+use App\Models\AuditLog;
+use Illuminate\Support\Str;
 
 
 class EmployeeController extends Controller
@@ -118,6 +120,9 @@ class EmployeeController extends Controller
 
         $errors = [];
         $imported = 0;
+        $importedEmployees = [];
+
+        Employee::startBulkOperation();
 
         foreach ($rows as $index => $row) {
             if ($index === 0 || empty($row[0])) continue;
@@ -153,7 +158,7 @@ class EmployeeController extends Controller
                 continue;
             }
 
-            Employee::create([
+            $employee = Employee::create([
                 'employee_code' => $employeeCode,
                 'name' => $name,
                 'mobile' => $mobile,
@@ -163,6 +168,27 @@ class EmployeeController extends Controller
             ]);
 
             $imported++;
+            $importedEmployees[] = $employee->id;
+        }
+
+        Employee::endBulkOperation();
+
+        // Create a single audit log entry for the import
+        if ($imported > 0) {
+            AuditLog::create([
+                'id' => (string) Str::uuid(),
+                'action' => AUDITLOG_ACTIONS['IMPORT'],
+                'table' => 'employees',
+                'record_id' => $importedEmployees[0],
+                'description' => "Imported {$imported} employees from file: {$file->getClientOriginalName()}",
+                'comments' => json_encode([
+                    'total_imported' => $imported,
+                    'imported_ids' => $importedEmployees,
+                    'file_name' => $file->getClientOriginalName(),
+                    'errors' => $errors
+                ]),
+                'performed_by' => Auth::id()
+            ]);
         }
 
         return response()->json([
@@ -246,7 +272,8 @@ class EmployeeController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->where('employee_code', 'like', "%$search%")
                     ->orWhere('name', 'like', "%$search%")
-                    ->orWhere('designation', 'like', "%$search%");
+                    ->orWhere('designation', 'like', "%$search%")
+                    ->orWhere('mobile', 'like', "%$search%");
             });
         }
 
@@ -327,16 +354,36 @@ class EmployeeController extends Controller
                 ], 404);
             }
 
+            $validator = Validator::make($request->all(), [
+                'per_page' => 'nullable|integer|min:1',
+                'page' => 'nullable|integer|min:1',
+                'search' => 'nullable|string',
+                'status' => 'nullable|integer|in:-1,0,1',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'success' => false,
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
             $perPage = $request->input('per_page', 10);
             $page = $request->input('page', 1);
             $search = $request->input('search', '');
+            $status = $request->input('status');
 
             $query = $branch->employees()->with('designation')->orderBy('employee_code', 'asc');
+
+            if (!is_null($status)) {
+                $query->where('status', $status);
+            }
 
             if ($search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('employee_code', 'like', "%$search%")
                         ->orWhere('name', 'like', "%$search%")
+                        ->orwhere('mobile', 'like', "%$search%")
                         ->orWhereHas('designation', function ($q) use ($search) {
                             $q->where('designation', 'like', "%$search%");
                         });
@@ -409,7 +456,7 @@ class EmployeeController extends Controller
         $page = $request->input('page', 1);
         $search = $request->input('q', '');
         $status = $request->input('status');
-        $branchCode = $request->input('branch_code');
+        $branchId = $request->input('branch_id');
         $type = $request->input('type');
         $isExport = $request->boolean('export');
 
@@ -419,9 +466,9 @@ class EmployeeController extends Controller
             $query->where('status', $status);
         }
 
-        if ($branchCode) {
-            $query->whereHas('branch', function ($q) use ($branchCode) {
-                $q->where('code', $branchCode);
+        if ($branchId) {
+            $query->whereHas('branch', function ($q) use ($branchId) {
+                $q->where('id', $branchId);
             });
         }
 
@@ -484,6 +531,7 @@ class EmployeeController extends Controller
                     'name' => $employee->name,
                     'mobile' => $employee->mobile,
                     'status' => $employee->status,
+                    'branch_id' => optional($employee->branch)->id ?? 'N/A',
                     'branch_code' => optional($employee->branch)->code ?? 'N/A',
                     'branch_name' => optional($employee->branch)->name ?? 'N/A',
                     'designation' => optional($employee->designation)->designation ?? 'N/A',

@@ -40,3 +40,16 @@ if (!defined('ORDER_STATUSES')) {
         'cancelled' => -1,
     ]);
 }
+
+if (!defined('AUDITLOG_ACTIONS')) {
+    define('AUDITLOG_ACTIONS', [
+        'CREATE' => 'Create',
+        'UPDATE' => 'Update',
+        'DELETE' => 'Delete',
+
+        'IMPORT' => 'Import',
+
+        'ENABLE' => 'Enable',
+        'DISABLE' => 'Disable',
+    ]);
+}
