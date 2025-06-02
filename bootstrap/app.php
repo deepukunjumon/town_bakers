@@ -4,11 +4,6 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Tymon\JWTAuth\Http\Middleware\Authenticate;
-use Illuminate\Http\Middleware\HandleCors;
-use Illuminate\Http\Middleware\TrustProxies;
-use Illuminate\Foundation\Http\Middleware\ValidatePostSize;
-use Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull;
-use Illuminate\Foundation\Http\Middleware\TrimStrings;
 use App\Http\Middleware\CheckPasswordResetMiddleware;
 use App\Http\Middleware\SuperAdminMiddleware;
 use App\Http\Middleware\AdminMiddleware;
@@ -27,15 +22,6 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        $middleware->append([
-            TrustProxies::class,
-            HandleCors::class,
-            ValidatePostSize::class,
-            TrimStrings::class,
-            ConvertEmptyStringsToNull::class,
-        ]);
-
-        // 🔗 Route middleware aliases
         $middleware->alias([
             'jwt.auth' => Authenticate::class,
             'super-admin' => SuperAdminMiddleware::class,
