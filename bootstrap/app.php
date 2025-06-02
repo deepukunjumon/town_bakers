@@ -8,6 +8,7 @@ use App\Http\Middleware\CheckPasswordResetMiddleware;
 use App\Http\Middleware\SuperAdminMiddleware;
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\BranchMiddleware;
+use App\Http\Middleware\CorsMiddleware;
 
 $constantsPath = __DIR__ . '/../app/constants.php';
 if (file_exists($constantsPath)) {
@@ -29,6 +30,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'branch' => BranchMiddleware::class,
             'check.password.reset' => CheckPasswordResetMiddleware::class,
         ]);
+
+        // Register global middleware
+        $middleware->append(CorsMiddleware::class);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         // 
