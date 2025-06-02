@@ -6,6 +6,7 @@ header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-W
 header('Access-Control-Allow-Credentials: true');
 header('Access-Control-Max-Age: 86400');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+header('Content-Type: application/json, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
 
 
 use Illuminate\Foundation\Application;
