@@ -7,8 +7,8 @@ header('Access-Control-Allow-Credentials: true');
 header('Access-Control-Max-Age: 86400');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 
-// Only set JSON content type if it's not a file download
-if (!isset($_SERVER['HTTP_X_REQUESTED_WITH']) || strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) !== 'xmlhttprequest') {
+// Only set JSON content type for API routes
+if (strpos($_SERVER['REQUEST_URI'], '/api/') === 0) {
     header('Content-Type: application/json; charset=UTF-8');
 }
 
