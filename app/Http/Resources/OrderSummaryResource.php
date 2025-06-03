@@ -37,6 +37,13 @@ class OrderSummaryResource extends JsonResource
                     'name' => $this->employee->name,
                 ]
                 : null,
+            'branch' => $this->branch
+                ? [
+                    'id' => $this->branch->id,
+                    'code' => $this->branch->code,
+                    'name' => $this->branch->name,
+                ]
+                : null,
         ];
     }
 }
