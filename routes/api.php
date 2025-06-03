@@ -64,6 +64,7 @@ Route::middleware(['jwt.auth'])->group(function () {
             Route::post('/branchwise/stock/summary', [StockController::class, 'branchwiseStockSummary']);
 
             // Order routes
+            Route::post('/create/order', [OrderController::class, 'adminCreateOrder']);
             Route::get('/orders', [OrderController::class, 'getAllOrders']);
             Route::get('/orders/branch/{branch_id}', [OrderController::class, 'getOrdersByBranchID']);
         });
@@ -98,7 +99,8 @@ Route::middleware(['jwt.auth'])->group(function () {
 
         Route::get('/branches/minimal', [BranchController::class, 'getMinimalBranches']);
         Route::get('/employees/minimal', [EmployeeController::class, 'getMinimalEmployees']);
-        Route::put('/employee/{employee_id}', [EmployeeController::class, 'updateEmployeeDetails']);
+        Route::get('/employee/{id}', [EmployeeController::class, 'getEmployeeDetails']);
+        Route::put('/employee/update/{employee_id}', [EmployeeController::class, 'updateEmployeeDetails']);
         Route::post('/employee/update-status', [EmployeeController::class, 'updateEmployeeStatus']);
 
         Route::get('/order/{id}', [OrderController::class, 'getOrderDetailsByID']);

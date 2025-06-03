@@ -19,9 +19,9 @@ class OrderSummaryResource extends JsonResource
                 ? [
                     'employee_code' => optional($this->deliveredByEmployee)->employee_code,
                     'name' => optional($this->deliveredByEmployee)->name,
-                  ]
+                ]
                 : null,
-            'created_date' => $this->created_at->format('Y-m-d'),
+            'created_date' => $this->created_at->format('d-m-Y'),
             'status' => $this->status,
             'payment_status' => $this->payment_status,
             'customer_name' => $this->customer_name,
@@ -29,14 +29,21 @@ class OrderSummaryResource extends JsonResource
             'customer_email' => $this->customer_email,
             'total_amount' => $this->total_amount,
             'advance_amount' => $this->advance_amount,
+            'balance_amount' => ($this->total_amount - $this->advance_amount),
             'employee' => $this->employee
                 ? [
                     'id' => $this->employee->id,
                     'employee_code' => $this->employee->employee_code,
                     'name' => $this->employee->name,
-                  ]
+                ]
+                : null,
+            'branch' => $this->branch
+                ? [
+                    'id' => $this->branch->id,
+                    'code' => $this->branch->code,
+                    'name' => $this->branch->name,
+                ]
                 : null,
         ];
     }
 }
-

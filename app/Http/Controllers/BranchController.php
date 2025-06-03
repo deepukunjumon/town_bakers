@@ -96,7 +96,7 @@ class BranchController extends Controller
         if (!$branch_id) {
             return response()->json([
                 'success' => false,
-                'message' => 'Branch ID is required',
+                'message' => 'Missing mandatory parameter',
             ], 422);
         }
 
@@ -117,7 +117,7 @@ class BranchController extends Controller
                 'name' => 'string',
                 'mobile' => 'digits:10',
                 'phone' => 'nullable|numeric|digits_between:1,15',
-                'email' => 'nullable|email',
+                'email' => 'nullable|email|unique:branches,email',
                 'address' => 'string',
             ]);
 

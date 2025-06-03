@@ -277,7 +277,7 @@ class OrderController extends Controller
             'total_amount' => $request->total_amount,
             'advance_amount' => $request->advance_amount,
             'payment_status' => $request->payment_status,
-            'status' => 0,
+            'status' => ORDER_STATUSES['pending'],
             'delivered_at' => null,
             'delivered_by' => null,
             'created_by' => $user->id,
@@ -441,43 +441,77 @@ class OrderController extends Controller
         ]);
     }
 
-    public function adminStore(Request $request)
+    /**
+     * Create order under any branch by admin
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function adminCreateOrder(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'branch_id' => 'required|uuid|exists:branches,id',
-            'employee_id' => 'nullable|uuid|exists:employees,id',
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'remarks' => 'nullable|string',
             'delivery_date' => 'required|date',
+            'delivery_time' => 'required|date_format:H:i',
+            'customer_name' => 'required|string|max:255',
+            'customer_email' => 'nullable|email|max:255',
+            'customer_mobile' => 'required|string|max:15',
+            'employee_id' => 'nullable|uuid|exists:employees,id',
             'total_amount' => 'required|numeric|min:0',
-            'advance_amount' => 'nullable|numeric|min:0',
-            'payment_status' => 'required|in:-1,0,1,2',
+            'advance_amount' => [
+                'nullable',
+                'numeric',
+                'min:0',
+                function ($attribute, $value, $fail) use ($request) {
+                    if ($value > $request->total_amount) {
+                        $fail('The advance amount cannot be greater than the total amount.');
+                    }
+                }
+            ],
+            'payment_status' => 'required|in:-1,0,1,2'
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
         }
 
-        $order = Order::create([
-            'branch_id' => $request->branch_id,
-            'employee_id' => $request->employee_id,
-            'title' => $request->title,
-            'description' => $request->description,
-            'remarks' => $request->remarks,
-            'delivery_date' => $request->delivery_date,
-            'total_amount' => $request->total_amount,
-            'advance_amount' => $request->advance_amount,
-            'payment_status' => $request->payment_status,
-            'status' => 0,
-            'created_by' => Auth::id(),
-        ]);
+        try {
+            $order = Order::create([
+                'branch_id' => $request->branch_id,
+                'employee_id' => $request->employee_id,
+                'title' => $request->title,
+                'description' => $request->description,
+                'remarks' => $request->remarks,
+                'delivery_date' => $request->delivery_date,
+                'delivery_time' => $request->delivery_time,
+                'customer_name' => $request->customer_name,
+                'customer_mobile' => $request->customer_mobile,
+                'customer_email' => $request->customer_email,
+                'total_amount' => $request->total_amount,
+                'payment_status' => $request->payment_status,
+                'advance_amount' => $request->advance_amount,
+                'status' => ORDER_STATUSES['pending'],
+                'created_by' => Auth::id(),
+            ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Order created by admin',
-            'order_details' => $order
-        ]);
+            return response()->json([
+                'success' => true,
+                'message' => 'Order created successfully'
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create order',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**

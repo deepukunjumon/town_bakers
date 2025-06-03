@@ -199,6 +199,42 @@ class EmployeeController extends Controller
     }
 
     /**
+     * Get employee details.
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function getEmployeeDetails(Request $request, $id): JsonResponse
+    {
+        $validator = Validator::make(
+            ['id' => $request->route('id')],
+            ['id' => 'required|uuid|exists:employees,id']
+        );
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $employee = Employee::with(['branch', 'designation'])->find($id);
+
+        return response()->json([
+            'success' => true,
+            'employee' => [
+                'id' => $employee->id,
+                'employee_code' => $employee->employee_code,
+                'name' => $employee->name,
+                'mobile' => $employee->mobile,
+                'status' => $employee->status,
+                'branch_id' => $employee->branch_id,
+                'branch_name' => optional($employee->branch)->name ?? 'N/A',
+                'branch_code' => optional($employee->branch)->code ?? 'N/A',
+                'designation_id' => $employee->designation_id,
+                'designation' => optional($employee->designation)->designation ?? 'N/A'
+            ]
+        ]);
+    }
+
+    /**
      * Update employee details.
      *
      * @param Request $request
@@ -207,9 +243,23 @@ class EmployeeController extends Controller
      */
     public function updateEmployeeDetails(Request $request, $employee_id): JsonResponse
     {
+        if (!$employee_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Missing mandatory parameter',
+            ], 422);
+        }
+
+        if (!$request->all()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Request data is empty',
+            ], 422);
+        }
+
         $validator = Validator::make($request->all(), [
             'name' => 'sometimes|string',
-            'mobile' => 'sometimes|digits:10',
+            'mobile' => 'sometimes|unique:employees,mobile|digits:10',
             'designation_id' => 'sometimes|exists:designations,id',
             'status' => 'sometimes|integer|in:-1,0,1',
             'branch_id' => 'sometimes|exists:branches,id',
@@ -509,9 +559,9 @@ class EmployeeController extends Controller
                 ];
             }
 
-            $branch_name = $branchCode ? optional($allEmployees->first()->branch)->name ?? 'All Branches' : 'All Branches';
-            $branch_code = $branchCode ?? 'ALL';
-            $branch_address = $branchCode ? optional($allEmployees->first()->branch)->address ?? 'N/A' : 'N/A';
+            $branch_name = $branchId ? optional($allEmployees->first()->branch)->name ?? 'All Branches' : 'All Branches';
+            $branch_code = $branchId ? optional($allEmployees->first()->branch)->code ?? 'ALL' : 'ALL';
+            $branch_address = $branchId ? optional($allEmployees->first()->branch)->address ?? 'N/A' : 'N/A';
             $date = now();
 
             if ($type === 'excel') {
@@ -521,6 +571,11 @@ class EmployeeController extends Controller
             if ($type === 'pdf') {
                 return EmployeesExportService::exportPdf($exportEmployees, $branch_name, $branch_code, $branch_address, $date, $columns);
             }
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid export type specified'
+            ], 400);
         } else {
             $employees = $query->paginate($perPage, ['id', 'employee_code', 'name', 'mobile', 'status', 'branch_id', 'designation_id'], 'page', $page);
 

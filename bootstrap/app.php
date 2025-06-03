@@ -29,6 +29,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'branch' => BranchMiddleware::class,
             'check.password.reset' => CheckPasswordResetMiddleware::class,
         ]);
+
     })
     ->withExceptions(function (Exceptions $exceptions) {
         // 
