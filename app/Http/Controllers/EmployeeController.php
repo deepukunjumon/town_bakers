@@ -216,7 +216,7 @@ class EmployeeController extends Controller
         }
 
         $employee = Employee::with(['branch', 'designation'])->find($id);
-        
+
         return response()->json([
             'success' => true,
             'employee' => [
@@ -243,9 +243,23 @@ class EmployeeController extends Controller
      */
     public function updateEmployeeDetails(Request $request, $employee_id): JsonResponse
     {
+        if (!$employee_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Missing mandatory parameter',
+            ], 422);
+        }
+
+        if (!$request->all()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Request data is empty',
+            ], 422);
+        }
+
         $validator = Validator::make($request->all(), [
             'name' => 'sometimes|string',
-            'mobile' => 'sometimes|digits:10',
+            'mobile' => 'sometimes|unique:employees,mobile|digits:10',
             'designation_id' => 'sometimes|exists:designations,id',
             'status' => 'sometimes|integer|in:-1,0,1',
             'branch_id' => 'sometimes|exists:branches,id',
