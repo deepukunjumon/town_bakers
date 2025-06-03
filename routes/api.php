@@ -64,6 +64,7 @@ Route::middleware(['jwt.auth'])->group(function () {
             Route::post('/branchwise/stock/summary', [StockController::class, 'branchwiseStockSummary']);
 
             // Order routes
+            Route::post('/create/order', [OrderController::class, 'adminCreateOrder']);
             Route::get('/orders', [OrderController::class, 'getAllOrders']);
             Route::get('/orders/branch/{branch_id}', [OrderController::class, 'getOrdersByBranchID']);
         });
