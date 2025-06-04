@@ -51,5 +51,8 @@ if (!defined('AUDITLOG_ACTIONS')) {
 
         'ENABLE' => 'Enable',
         'DISABLE' => 'Disable',
+
+        'CANCEL' => 'Cancel',
+        'COMPLETE' => 'Complete'
     ]);
 }

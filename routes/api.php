@@ -45,6 +45,7 @@ Route::middleware(['jwt.auth'])->group(function () {
 
             Route::get('/logs/audit-logs', [AuditLogController::class, 'getAuditLogs']);
             Route::get('/list/tables', [AuditLogController::class, 'getLoggableTables']);
+            Route::get('/audit-log/actions', [AuditLogController::class, 'getLoggableActions']);
         });
 
         // Admin-only routes
