@@ -42,7 +42,7 @@ trait HasAuditLogs
     {
         $user = Auth::user();
         $description = $this->generateAuditDescription($action);
-        
+
         // If this is a status change, override the action
         if ($action === AUDITLOG_ACTIONS['UPDATE'] && $this->isDirty('status') && $this->status === DEFAULT_STATUSES['deleted']) {
             $action = AUDITLOG_ACTIONS['DELETE'];
@@ -53,7 +53,7 @@ trait HasAuditLogs
         if ($action === AUDITLOG_ACTIONS['UPDATE'] && $this->isDirty('status') && $this->status === DEFAULT_STATUSES['inactive']) {
             $action = AUDITLOG_ACTIONS['DISABLE'];
         }
-        
+
         AuditLog::create([
             'id' => (string) Str::uuid(),
             'action' => $action,
@@ -68,15 +68,14 @@ trait HasAuditLogs
     {
         $modelName = class_basename($this);
         $tableName = $this->getTable();
-        
+
         switch ($action) {
             case AUDITLOG_ACTIONS['CREATE']:
                 return "New record created in {$tableName}";
             case AUDITLOG_ACTIONS['UPDATE']:
                 $changes = $this->getDirty();
                 $changedFields = array_keys($changes);
-                
-                // Check if this is a status change to deleted
+
                 if (isset($changes['status']) && $changes['status'] === DEFAULT_STATUSES['deleted']) {
                     return "Record deleted from {$tableName}";
                 }
@@ -86,7 +85,14 @@ trait HasAuditLogs
                 if (isset($changes['status']) && $changes['status'] === DEFAULT_STATUSES['active']) {
                     return "Record enabled from {$tableName}";
                 }
-                
+                // Special Cases
+                if ($tableName === 'orders' && isset($changes['status']) && $changes['status'] === ORDER_STATUSES['delivered']) {
+                    return "Order marked as delivered";
+                }
+                if ($tableName === 'orders' && isset($changes['status']) && $changes['status'] === ORDER_STATUSES['cancelled']) {
+                    return "Order marked as cancelled";
+                }
+
                 return "Record updated in {$tableName}: " . implode(', ', $changedFields);
             case AUDITLOG_ACTIONS['DELETE']:
                 return "Record deleted from {$tableName}";
@@ -104,4 +110,4 @@ trait HasAuditLogs
     {
         static::$isBulkOperation = false;
     }
-} 
+}
