@@ -55,7 +55,7 @@ class ItemsController extends Controller
      * @param $item_id
      * @return JsonResponse
      */
-    public function updateItem(Request $request, $item_id): JsonResponse
+    public function updateItemDetails(Request $request, $item_id): JsonResponse
     {
         if (!$item_id) {
             return response()->json([
