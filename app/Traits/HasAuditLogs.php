@@ -49,7 +49,7 @@ trait HasAuditLogs
                 $action = AUDITLOG_ACTIONS['DELIVERED'];
             }
             if ($this->status === ORDER_STATUSES['cancelled']) {
-                $action = AUDITLOG_ACTIONS['CANCELLED'];
+                $action = AUDITLOG_ACTIONS['CANCEL'];
             }
         }
         if ($action === AUDITLOG_ACTIONS['UPDATE'] && $this->isDirty('status') && $this->status === DEFAULT_STATUSES['deleted']) {
