@@ -257,11 +257,19 @@ class ItemsController extends Controller
         ], 200);
     }
 
-    public function getMinimalActiveItems(): JsonResponse
+    public function getMinimalActiveItems(Request $request): JsonResponse
     {
-        $items = Items::where('status', DEFAULT_STATUSES['active'])
-            ->orderby('name', 'desc')
-            ->get(['id', 'name']);
+        $query = Items::where('status', DEFAULT_STATUSES['active'])
+            ->orderby('name', 'asc');
+
+        if ($request->has('q') && !empty($request->q)) {
+            $searchTerm = $request->q;
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('name', 'like', "%{$searchTerm}%");
+            });
+        }
+
+        $items = $query->get(['id', 'name']);
 
         return response()->json([
             'success' => true,
