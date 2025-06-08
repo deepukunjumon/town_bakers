@@ -62,7 +62,7 @@ Route::middleware(['jwt.auth'])->group(function () {
             Route::get('/all-employees', [EmployeeController::class, 'getAllEmployees']);
             Route::get('/employees/{branch_id}', [EmployeeController::class, 'getEmployeesByBranch']);
 
-            Route::post('/branchwise/stock/summary', [StockController::class, 'branchwiseStockSummary']);
+            Route::get('/branchwise/stock/summary', [StockController::class, 'branchwiseStockSummary']);
 
             // Order routes
             Route::post('/create/order', [OrderController::class, 'adminCreateOrder']);
