@@ -257,6 +257,12 @@ class ItemsController extends Controller
         ], 200);
     }
 
+    /**
+     * Minimal list of active items
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
     public function getMinimalActiveItems(Request $request): JsonResponse
     {
         $query = Items::where('status', DEFAULT_STATUSES['active'])

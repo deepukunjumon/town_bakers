@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Services;
 
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
@@ -10,6 +11,8 @@ class StockExportService
 {
     public static function exportExcel($items, $branch_name, $branch_code, $date, $columns)
     {
+        ob_start();
+
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
 
@@ -56,6 +59,8 @@ class StockExportService
     public static function exportPdf($items, $branch_name, $branch_code, $branch_address, $date, $columns, $extra = [])
     {
         if (ob_get_length()) ob_end_clean();
+
+        ob_start();
 
         $safeBranch = htmlentities($branch_name, ENT_QUOTES, 'UTF-8');
         $safeBranchCode = htmlentities($branch_code, ENT_QUOTES, 'UTF-8');
