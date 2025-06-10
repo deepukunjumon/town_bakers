@@ -44,6 +44,7 @@ Route::middleware(['jwt.auth'])->group(function () {
             Route::post('/test-mail', [MailController::class, 'testMail']);
 
             Route::get('/users', [UserController::class, 'getAllUsers']);
+            Route::get('/user-roles', [UserController::class, 'getUserRoles']);
 
             Route::get('/logs/audit-logs', [AuditLogController::class, 'getAuditLogs']);
             Route::get('/list/tables', [AuditLogController::class, 'getLoggableTables']);

@@ -194,6 +194,27 @@ class UserController extends Controller
     }
 
     /**
+     * List of user roles for login
+     * 
+     * @return JsonResponse
+     */
+    public function getUserRoles(): JsonResponse
+    {
+        $roles = array_values(ROLES);
+        $formattedRoles = array_map(function ($role) {
+            return [
+                'value' => $role,
+                'label' => ucwords(str_replace('_', ' ', $role)),
+            ];
+        }, $roles);
+
+        return response()->json([
+            'success' => true,
+            'actions' => $formattedRoles
+        ]);
+    }
+
+    /**
      * Get the profile of the authenticated user.
      *
      * @param Request $request
