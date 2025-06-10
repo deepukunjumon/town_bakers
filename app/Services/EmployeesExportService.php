@@ -11,6 +11,8 @@ class EmployeesExportService
 {
     public static function exportExcel($employees, $branch_name, $branch_code, $date, $columns)
     {
+        ob_start();
+
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
 
@@ -57,15 +59,15 @@ class EmployeesExportService
 
     public static function exportPdf($employees, $branch_name, $branch_code, $branch_address, $date, $columns, $extra = [])
     {
-        if (ob_get_length()) {
-            ob_end_clean();
-        }
-    
+        if (ob_get_length()) ob_end_clean();
+
+        ob_start();
+
         $safeBranch = htmlentities($branch_name, ENT_QUOTES, 'UTF-8');
         $safeBranchCode = htmlentities($branch_code, ENT_QUOTES, 'UTF-8');
         $safeBranchAddress = htmlentities($branch_address, ENT_QUOTES, 'UTF-8');
         $safeDate = $date->format('d-m-Y');
-    
+
         $html = '
         <html>
         <head>
@@ -131,11 +133,11 @@ class EmployeesExportService
         foreach ($columns as $header) {
             $html .= '<th>' . htmlentities($header, ENT_QUOTES, 'UTF-8') . '</th>';
         }
-    
+
         $html .= '</tr>
                     </thead>
                     <tbody>';
-    
+
         foreach ($employees as $row) {
             $html .= '<tr>';
             foreach ($row as $value) {
@@ -143,25 +145,22 @@ class EmployeesExportService
             }
             $html .= '</tr>';
         }
-    
+
         $html .= '
                     </tbody>
                 </table>
             </div>
         </body>
         </html>';
-    
+
         $dompdf = new Dompdf();
         $dompdf->loadHtml($html, 'UTF-8');
-    
+
         // Set to A4 portrait
         $dompdf->setPaper('A4', 'portrait');
-    
         $dompdf->render();
-    
         $filename = 'Employees_List_' . $safeBranchCode . '_' . $safeDate . '.pdf';
         $dompdf->stream($filename, ["Attachment" => true]);
         exit;
     }
-    
 }

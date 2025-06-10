@@ -45,6 +45,7 @@ Route::middleware(['jwt.auth'])->group(function () {
 
             Route::get('/logs/audit-logs', [AuditLogController::class, 'getAuditLogs']);
             Route::get('/list/tables', [AuditLogController::class, 'getLoggableTables']);
+            Route::get('/audit-log/actions', [AuditLogController::class, 'getLoggableActions']);
         });
 
         // Admin-only routes
@@ -61,7 +62,7 @@ Route::middleware(['jwt.auth'])->group(function () {
             Route::get('/all-employees', [EmployeeController::class, 'getAllEmployees']);
             Route::get('/employees/{branch_id}', [EmployeeController::class, 'getEmployeesByBranch']);
 
-            Route::post('/branchwise/stock/summary', [StockController::class, 'branchwiseStockSummary']);
+            Route::get('/branchwise/stock/summary', [StockController::class, 'branchwiseStockSummary']);
 
             // Order routes
             Route::post('/create/order', [OrderController::class, 'adminCreateOrder']);
@@ -87,12 +88,14 @@ Route::middleware(['jwt.auth'])->group(function () {
 
         // General authenticated routes (available to all roles)
         Route::post('/create/item', [ItemsController::class, 'createItem']);
+        Route::put('/item/update/{id}', [ItemsController::class, 'updateItemDetails']);
         Route::post('/import/items', [ItemsController::class, 'importItems']);
         Route::get('/items', [ItemsController::class, 'getAllItems']);
         Route::get('/items/minimal', [ItemsController::class, 'getMinimalActiveItems']);
         Route::post('/item/update-status', [ItemsController::class, 'updateItemStatus']);
 
         Route::post('/create/designation', [DesignationController::class, 'createDesignation']);
+        Route::put('/designation/update/{id}', [DesignationController::class, 'updateDesignationDetails']);
         Route::get('/designations', [DesignationController::class, 'getAllDesignations']);
         Route::get('/designations/active', [DesignationController::class, 'getActiveDesignations']);
         Route::post('/designation/update-status', [DesignationController::class, 'updateDesignationStatus']);

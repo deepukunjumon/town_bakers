@@ -357,11 +357,20 @@ class EmployeeController extends Controller
     /**
      * Get minimal employee details.
      *
+     * @param Request $request
      * @return JsonResponse
      */
-    public function getMinimalEmployees(): JsonResponse
+    public function getMinimalEmployees(Request $request): JsonResponse
     {
+        $search = $request->input('q', '');
+
         $employees = Employee::where('status', DEFAULT_STATUSES['active'])
+            ->when($search, function ($query) use ($search) {
+                return $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', '%' . $search . '%')
+                        ->orWhere('employee_code', 'like', '%' . $search . '%');
+                });
+            })
             ->get(['id', 'employee_code', 'name'])
             ->map(function ($employee) {
                 return [

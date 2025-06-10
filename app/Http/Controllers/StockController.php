@@ -10,10 +10,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
-use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use PhpOffice\PhpSpreadsheet\Style\Alignment;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
-use Dompdf\Dompdf;
 use App\Services\StockExportService;
 
 class StockController extends Controller
@@ -158,7 +154,7 @@ class StockController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'branch_id' => 'required',
+            'branch_id' => 'required|exists:branches,id',
             'date' => 'required|date',
             'export' => 'sometimes|boolean',
             'type' => 'required_if:export,true|in:excel,pdf',
@@ -196,10 +192,10 @@ class StockController extends Controller
         }
 
         $items = $query->select(
-                'stock_items.item_id',
-                'items.name as item_name',
-                DB::raw('SUM(stock_items.quantity) as total_quantity')
-            )
+            'stock_items.item_id',
+            'items.name as item_name',
+            DB::raw('SUM(stock_items.quantity) as total_quantity')
+        )
             ->groupBy('stock_items.item_id', 'items.name')
             ->orderBy('items.name', 'asc')
             ->paginate($perPage, ['*'], 'page', $page);

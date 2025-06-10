@@ -164,4 +164,25 @@ class AuditLogController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * List of loggable actions in Audit Logs
+     * 
+     * @return JsonResponse
+     */
+    public function getLoggableActions(): JsonResponse
+    {
+        $actions = array_values(AUDITLOG_ACTIONS);
+        $formattedActions = array_map(function ($action) {
+            return [
+                'id' => $action,
+                'name' => ucfirst($action)
+            ];
+        }, $actions);
+
+        return response()->json([
+            'success' => true,
+            'actions' => $formattedActions
+        ]);
+    }
 }

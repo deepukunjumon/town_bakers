@@ -49,6 +49,63 @@ class ItemsController extends Controller
     }
 
     /**
+     * Update item details
+     * 
+     * @param Request $request
+     * @param $item_id
+     * @return JsonResponse
+     */
+    public function updateItemDetails(Request $request, $item_id): JsonResponse
+    {
+        if (!$item_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Missing mandatory parameter',
+            ], 422);
+        }
+
+        if (!$request->all()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Request data is empty',
+            ], 422);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'name' => 'sometimes|string',
+            'category' => 'sometimes|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $item = Items::findOrFail($item_id);
+
+        if ($item['status'] != DEFAULT_STATUSES['active']) {
+            return response()->json([
+                'success' => false,
+                'message' => 'item is not active',
+            ], 400);
+        }
+
+        $item->fill($request->only([
+            'name',
+            'category'
+        ]));
+
+        $item->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Updated Successfully',
+        ], 200);
+    }
+
+    /**
      * Import items from an Excel file.
      *
      * @param Request $request
@@ -200,11 +257,25 @@ class ItemsController extends Controller
         ], 200);
     }
 
-    public function getMinimalActiveItems(): JsonResponse
+    /**
+     * Minimal list of active items
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function getMinimalActiveItems(Request $request): JsonResponse
     {
-        $items = Items::where('status', DEFAULT_STATUSES['active'])
-            ->orderby('name', 'desc')
-            ->get(['id', 'name']);
+        $query = Items::where('status', DEFAULT_STATUSES['active'])
+            ->orderby('name', 'asc');
+
+        if ($request->has('q') && !empty($request->q)) {
+            $searchTerm = $request->q;
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('name', 'like', "%{$searchTerm}%");
+            });
+        }
+
+        $items = $query->get(['id', 'name']);
 
         return response()->json([
             'success' => true,

@@ -11,7 +11,13 @@ use Illuminate\Support\Facades\Validator;
 class DesignationController extends Controller
 {
 
-    public function createDesignation(Request $request)
+    /**
+     * Create new designation
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function createDesignation(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'designation' => 'required|string|unique:designations,designation',
@@ -38,7 +44,11 @@ class DesignationController extends Controller
     }
 
 
-    public function getActiveDesignations()
+    /**
+     * Get the list of all active designations
+     * @return JsonResponse
+     */
+    public function getActiveDesignations(): JsonResponse
     {
         $designations = Designations::where('status', DEFAULT_STATUSES['active'])
             ->get(['id', 'designation', 'status'])
@@ -109,6 +119,65 @@ class DesignationController extends Controller
     }
 
     /**
+     * Update designation details
+     * 
+     * @param Request $request
+     * @param $id
+     * 
+     * @return JsonResponse
+     */
+    public function updateDesignationDetails(Request $request, $id): JsonResponse
+    {
+        if (!$id || empty($id)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Missing mandatory parameter',
+            ], 422);
+        }
+
+        if (!$request->all()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Request data is empty',
+            ], 422);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'designation' => 'required|string|unique:designations,designation,' . $id,
+            'status' => 'nullable|integer|in:0,1',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $designation = Designations::findOrFail($id);
+
+        if ($designation->status != DEFAULT_STATUSES['active']) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Designation is not active',
+            ], 400);
+        }
+
+        $designation->fill($request->only([
+            'designation',
+            'status'
+        ]));
+
+        $designation->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Updated successfully',
+        ], 200);
+    }
+
+    /**
      * Update Designation Status
      * 
      * @param Request $request
@@ -124,16 +193,17 @@ class DesignationController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'errors' => $validator->errors(),
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
             ], 422);
         }
 
-        $designation = Designations::find($request->id);
+        $designation = Designations::findOrFail($request->id);
 
         if ($designation->status == $request->status) {
             return response()->json([
                 'success' => false,
-                'error' => 'Status is already set to the given value',
+                'message' => 'Status is already set to the given value',
             ], 422);
         }
 
@@ -142,13 +212,13 @@ class DesignationController extends Controller
         if (!$designation->save()) {
             return response()->json([
                 'success' => false,
-                'error' => 'Failed to update status',
+                'message' => 'Failed to update status',
             ], 500);
         }
 
         return response()->json([
             'success' => true,
-            'message' => 'Updated',
+            'message' => 'Status updated successfully',
         ], 200);
     }
 }
