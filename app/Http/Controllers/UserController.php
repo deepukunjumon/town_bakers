@@ -129,6 +129,71 @@ class UserController extends Controller
     }
 
     /**
+     * Get list of users
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function getAllUsers(Request $request): JsonResponse
+    {
+        $query = User::query();
+
+        $perPage = $request->input('per_page', 10);
+        $page = $request->input('page', 1);
+
+        if ($request->has('status')) {
+            $query->where('status', $request->input('status'));
+        }
+
+        if ($request->has('role')) {
+            $query->where('role', $request->input('role'));
+        }
+
+        if ($request->filled('q')) {
+            $search = $request->input('q');
+            $searchableColumns = ['username', 'name', 'mobile', 'email'];
+
+            $query->where(function ($query) use ($search, $searchableColumns) {
+                foreach ($searchableColumns as $column) {
+                    $query->orWhere($column, 'like', "%{$search}%");
+                }
+            });
+        }
+
+
+        $query->orderBy('name', 'asc');
+
+        $users = $query->paginate($perPage, ['id', 'username', 'name', 'mobile', 'email', 'role', 'status'], 'page', $page);
+
+        $transformed = $users->getCollection()->transform(function ($user) {
+            return [
+                'id' => $user->id,
+                'username' => $user->username,
+                'name' => $user->name,
+                'mobile' => $user->mobile,
+                'email' => $user->email,
+                'role' => ucwords(str_replace('_', ' ', $user->role)),
+                'status' => $user->status,
+            ];
+        });
+
+        $users->setCollection($transformed);
+
+        return response()->json([
+            'success' => true,
+            'users' => $users->items(),
+            'pagination' => [
+                'total' => $users->total(),
+                'per_page' => $users->perPage(),
+                'current_page' => $users->currentPage(),
+                'last_page' => $users->lastPage(),
+                'from' => $users->firstItem(),
+                'to' => $users->lastItem(),
+            ],
+        ], 200);
+    }
+
+    /**
      * Get the profile of the authenticated user.
      *
      * @param Request $request
