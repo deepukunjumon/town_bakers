@@ -210,7 +210,7 @@ class UserController extends Controller
 
         return response()->json([
             'success' => true,
-            'actions' => $formattedRoles
+            'roles' => $formattedRoles
         ]);
     }
 
