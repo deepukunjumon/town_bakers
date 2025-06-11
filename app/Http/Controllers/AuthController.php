@@ -39,6 +39,13 @@ class AuthController extends Controller
 
         $user = Auth::guard('api')->user();
 
+        if ($user->status != DEFAULT_STATUSES['active']) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Account Inactive. Contact Support'
+            ], 400);
+        }
+
         $passwordResetRequired = Hash::check(DEFAULT_PASSWORD, $user->password);
 
         return response()->json([

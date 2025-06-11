@@ -45,6 +45,8 @@ Route::middleware(['jwt.auth'])->group(function () {
 
             Route::get('/users', [UserController::class, 'getAllUsers']);
             Route::get('/user-roles', [UserController::class, 'getUserRoles']);
+            Route::post('/user/update-status', [UserController::class, 'updateUserStatus']);
+            Route::put('/user/update/{user_id}', [UserController::class, 'updateUserDetails']);
 
             Route::get('/logs/audit-logs', [AuditLogController::class, 'getAuditLogs']);
             Route::get('/list/tables', [AuditLogController::class, 'getLoggableTables']);
