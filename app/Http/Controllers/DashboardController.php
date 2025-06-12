@@ -21,7 +21,7 @@ class DashboardController extends Controller
             "SELECT 
             (SELECT COUNT(*) FROM employees WHERE status = ?) as active_employees_count,
             (SELECT COUNT(*) FROM branches WHERE status = ?) as active_branches_count,
-            (SELECT COUNT(*) FROM orders WHERE status = ?) as upcoming_orders_count",
+            (SELECT COUNT(*) FROM orders WHERE status = ? AND delivery_date >= CURDATE()) as upcoming_orders_count",
             [
                 DEFAULT_STATUSES['active'],
                 DEFAULT_STATUSES['active'],
