@@ -308,7 +308,7 @@ class UserController extends Controller
         $user->fill($request->only([
             'name',
             'mobile',
-            'email', 
+            'email',
             'role'
         ]));
 
@@ -340,7 +340,7 @@ class UserController extends Controller
             'name' => $user->name,
             'mobile' => $user->mobile,
             'email' => $user->email,
-            'role' => $user->role,
+            'role' => ucwords(str_replace('_', ' ', $user->role)),
             'user_since' => $user->created_at ? $user->created_at->format('Y-m-d') : ""
         ];
 
