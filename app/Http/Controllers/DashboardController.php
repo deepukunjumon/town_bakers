@@ -7,6 +7,10 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
+use App\Models\Employee;
+use App\Models\Branch;
+use App\Models\Order;
+use App\Models\User;
 
 class DashboardController extends Controller
 {
@@ -17,55 +21,71 @@ class DashboardController extends Controller
      */
     public function getSuperAdminDashboardStats(Request $request): JsonResponse
     {
-        $counts = DB::select(
-            "SELECT 
-            (SELECT COUNT(*) FROM employees WHERE status = ?) as active_employees_count,
-            (SELECT COUNT(*) FROM branches WHERE status = ?) as active_branches_count,
-            (SELECT COUNT(*) FROM orders WHERE status = ? AND delivery_date >= CURDATE()) as upcoming_orders_count",
-            [
-                DEFAULT_STATUSES['active'],
-                DEFAULT_STATUSES['active'],
-                ORDER_STATUSES['pending']
-            ]
-        )[0];
-
-        $activeUsersCount = DB::table('users')
-            ->where('status', DEFAULT_STATUSES['active'])
-            ->groupBy('role')
-            ->select('role', DB::raw('count(*) as count'))
-            ->get()
-            ->mapWithKeys(fn($item) => [$item->role => $item->count]);
-
-        $responseData = [
-            'active_employees_count' => $counts->active_employees_count,
-            'active_branches_count' => $counts->active_branches_count,
-            'upcoming_orders_count' => $counts->upcoming_orders_count,
-            'active_users_count' => $activeUsersCount,
-        ];
-
+        $cacheKey = 'super_admin_dashboard_stats';
         if ($request->boolean('orders')) {
-            $todaysOrders = DB::table('orders')
-                ->whereDate('delivery_date', Carbon::today())
-                ->select([
-                    DB::raw('COUNT(*) as total'),
-                    DB::raw('COUNT(CASE WHEN status = ' . ORDER_STATUSES['pending'] . ' THEN 1 END) as pending'),
-                    DB::raw('COUNT(CASE WHEN status = ' . ORDER_STATUSES['delivered'] . ' THEN 1 END) as delivered'),
-                    DB::raw('COUNT(CASE WHEN status = ' . ORDER_STATUSES['cancelled'] . ' THEN 1 END) as cancelled')
-                ])
-                ->first();
-
-            $responseData['todays_orders'] = [
-                'total' => (int)$todaysOrders->total,
-                'pending' => (int)$todaysOrders->pending,
-                'delivered' => (int)$todaysOrders->delivered,
-                'cancelled' => (int)$todaysOrders->cancelled
-            ];
+            $cacheKey .= '_with_orders';
         }
 
-        return response()->json([
-            'success' => true,
-            'data' => $responseData
-        ]);
+        return cache()->remember($cacheKey, now()->addMinutes(15), function () use ($request) {
+            $today = Carbon::today();
+
+            $activeEmployeesCount = DB::table('employees')
+                ->where('status', DEFAULT_STATUSES['active'])
+                ->count();
+
+            $activeBranchesCount = DB::table('branches')
+                ->where('status', DEFAULT_STATUSES['active'])
+                ->count();
+
+            $todaysPendingOrdersCount = DB::table('orders')
+                ->where('status', ORDER_STATUSES['pending'])
+                ->whereDate('delivery_date', $today)
+                ->count();
+
+            $todaysCompletedOrdersCount = DB::table('orders')
+                ->where('status', ORDER_STATUSES['delivered'])
+                ->whereDate('delivery_date', $today)
+                ->count();
+
+            $activeUsersCount = DB::table('users')
+                ->where('status', DEFAULT_STATUSES['active'])
+                ->groupBy('role')
+                ->select('role', DB::raw('COUNT(*) as count'))
+                ->get()
+                ->mapWithKeys(fn($item) => [$item->role => $item->count]);
+
+            $responseData = [
+                'active_employees_count' => $activeEmployeesCount,
+                'active_branches_count' => $activeBranchesCount,
+                'todays_pending_orders_count' => $todaysPendingOrdersCount,
+                'todays_completed_orders_count' => $todaysCompletedOrdersCount,
+                'active_users_count' => $activeUsersCount,
+            ];
+
+            if ($request->boolean('orders')) {
+                $todaysOrders = DB::table('orders')
+                    ->whereDate('delivery_date', $today)
+                    ->select([
+                        DB::raw('COUNT(*) as total'),
+                        DB::raw('COUNT(CASE WHEN status = ' . ORDER_STATUSES['pending'] . ' THEN 1 END) as pending'),
+                        DB::raw('COUNT(CASE WHEN status = ' . ORDER_STATUSES['delivered'] . ' THEN 1 END) as delivered'),
+                        DB::raw('COUNT(CASE WHEN status = ' . ORDER_STATUSES['cancelled'] . ' THEN 1 END) as cancelled')
+                    ])
+                    ->first();
+
+                $responseData['todays_orders'] = [
+                    'total' => (int) $todaysOrders->total,
+                    'pending' => (int) $todaysOrders->pending,
+                    'delivered' => (int) $todaysOrders->delivered,
+                    'cancelled' => (int) $todaysOrders->cancelled
+                ];
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $responseData
+            ]);
+        });
     }
 
     /**
@@ -80,8 +100,13 @@ class DashboardController extends Controller
         $activeBranchesCount = DB::table('branches')
             ->where('status', DEFAULT_STATUSES['active'])
             ->count();
-        $pendingOrdersCount = DB::table('orders')
+        $todaysPendingOrdersCount = DB::table('orders')
             ->where('status', ORDER_STATUSES['pending'])
+            ->whereDate('delivery_date', Carbon::today())
+            ->count();
+        $todaysDeliveredOrdersCount = DB::table('orders')
+            ->where('status', ORDER_STATUSES['delivered'])
+            ->whereDate('delivery_date', Carbon::today())
             ->count();
 
         return response()->json([
@@ -89,7 +114,8 @@ class DashboardController extends Controller
             'data' => [
                 'active_employees_count' => $activeEmployeesCount,
                 'active_branches_count' => $activeBranchesCount,
-                'pending_orders_count' => $pendingOrdersCount
+                'todays_pending_orders_count' => $todaysPendingOrdersCount,
+                'todays_delivered_orders_count' => $todaysDeliveredOrdersCount
             ]
         ]);
     }
@@ -117,12 +143,19 @@ class DashboardController extends Controller
             ->whereDate('delivery_date', Carbon::today())
             ->count();
 
+        $todaysDeliveredOrdersCount = DB::table('orders')
+            ->where('status', ORDER_STATUSES['delivered'])
+            ->where('branch_id', Auth::user()->branch_id)
+            ->whereDate('delivery_date', Carbon::today())
+            ->count();
+
         return response()->json([
             'success' => true,
             'data' => [
                 'active_employees_count' => $activeEmployeesCount,
                 'pending_orders_count' => $pendingOrdersCount,
                 'todays_pending_orders_count' => $todaysPendingOrdersCount,
+                'todays_delivered_orders_count' => $todaysDeliveredOrdersCount
             ]
         ]);
     }
