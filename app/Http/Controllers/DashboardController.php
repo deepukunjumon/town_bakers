@@ -21,71 +21,50 @@ class DashboardController extends Controller
      */
     public function getSuperAdminDashboardStats(Request $request): JsonResponse
     {
-        $cacheKey = 'super_admin_dashboard_stats';
-        if ($request->boolean('orders')) {
-            $cacheKey .= '_with_orders';
-        }
+        $responseData = [];
 
-        return cache()->remember($cacheKey, now()->addMinutes(15), function () use ($request) {
+        $responseData['active_employees_count'] = DB::table('employees')
+            ->where('status', DEFAULT_STATUSES['active'])
+            ->count();
+
+        $responseData['active_branches_count'] = DB::table('branches')
+            ->where('status', DEFAULT_STATUSES['active'])
+            ->count();
+
+        $activeUsersCount = DB::table('users')
+            ->where('status', DEFAULT_STATUSES['active'])
+            ->groupBy('role')
+            ->select('role', DB::raw('COUNT(*) as count'))
+            ->get()
+            ->mapWithKeys(fn($item) => [$item->role => $item->count]);
+
+        $responseData['active_users_count'] = $activeUsersCount;
+
+        if ($request->boolean('orders')) {
             $today = Carbon::today();
 
-            $activeEmployeesCount = DB::table('employees')
-                ->where('status', DEFAULT_STATUSES['active'])
-                ->count();
-
-            $activeBranchesCount = DB::table('branches')
-                ->where('status', DEFAULT_STATUSES['active'])
-                ->count();
-
-            $todaysPendingOrdersCount = DB::table('orders')
-                ->where('status', ORDER_STATUSES['pending'])
+            $todaysOrders = DB::table('orders')
+                ->select(
+                    DB::raw("COUNT(*) as total"),
+                    DB::raw("SUM(CASE WHEN status = '" . ORDER_STATUSES['pending'] . "' THEN 1 ELSE 0 END) as pending"),
+                    DB::raw("SUM(CASE WHEN status = '" . ORDER_STATUSES['delivered'] . "' THEN 1 ELSE 0 END) as delivered"),
+                    DB::raw("SUM(CASE WHEN status = '" . ORDER_STATUSES['cancelled'] . "' THEN 1 ELSE 0 END) as cancelled")
+                )
                 ->whereDate('delivery_date', $today)
-                ->count();
+                ->first();
 
-            $todaysCompletedOrdersCount = DB::table('orders')
-                ->where('status', ORDER_STATUSES['delivered'])
-                ->whereDate('delivery_date', $today)
-                ->count();
-
-            $activeUsersCount = DB::table('users')
-                ->where('status', DEFAULT_STATUSES['active'])
-                ->groupBy('role')
-                ->select('role', DB::raw('COUNT(*) as count'))
-                ->get()
-                ->mapWithKeys(fn($item) => [$item->role => $item->count]);
-
-            $responseData = [
-                'active_employees_count' => $activeEmployeesCount,
-                'active_branches_count' => $activeBranchesCount,
-                'todays_pending_orders_count' => $todaysPendingOrdersCount,
-                'todays_completed_orders_count' => $todaysCompletedOrdersCount,
-                'active_users_count' => $activeUsersCount,
+            $responseData['todays_orders'] = [
+                'total' => (int) $todaysOrders->total,
+                'pending' => (int) $todaysOrders->pending,
+                'delivered' => (int) $todaysOrders->delivered,
+                'cancelled' => (int) $todaysOrders->cancelled
             ];
+        }
 
-            if ($request->boolean('orders')) {
-                $todaysOrders = DB::table('orders')
-                    ->whereDate('delivery_date', $today)
-                    ->select([
-                        DB::raw('COUNT(*) as total'),
-                        DB::raw('COUNT(CASE WHEN status = ' . ORDER_STATUSES['pending'] . ' THEN 1 END) as pending'),
-                        DB::raw('COUNT(CASE WHEN status = ' . ORDER_STATUSES['delivered'] . ' THEN 1 END) as delivered'),
-                        DB::raw('COUNT(CASE WHEN status = ' . ORDER_STATUSES['cancelled'] . ' THEN 1 END) as cancelled')
-                    ])
-                    ->first();
-
-                $responseData['todays_orders'] = [
-                    'total' => (int) $todaysOrders->total,
-                    'pending' => (int) $todaysOrders->pending,
-                    'delivered' => (int) $todaysOrders->delivered,
-                    'cancelled' => (int) $todaysOrders->cancelled
-                ];
-            }
-
-            return response()->json([
-                'success' => true,
-                'data' => $responseData
-            ]);
-        });
+        return response()->json([
+            'success' => true,
+            'data' => $responseData
+        ]);
     }
 
     /**
