@@ -285,6 +285,8 @@ class BranchController extends Controller
         $perPage = $request->input('per_page', 10);
 
         $branches = Branch::select(['id', 'code', 'name', 'status'])
+            ->where('status', DEFAULT_STATUSES['active'])
+            ->orderBy('code', 'asc')
             ->paginate($perPage, ['*'], 'page', $page);
 
         $branchesData = $branches->map(function ($branch) {
