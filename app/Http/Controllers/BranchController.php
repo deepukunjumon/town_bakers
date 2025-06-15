@@ -221,8 +221,8 @@ class BranchController extends Controller
 
         $page = $request->input('page', 1);
         $perPage = $request->input('per_page', 10);
-        $sortKey = $request->input('sortKey', 'created_at');
-        $sortDirection = $request->input('sortDirection', 'desc');
+        $sortKey = $request->input('sortKey', 'code');
+        $sortDirection = $request->input('sortDirection', 'asc');
         $searchQuery = $request->input('q', '');
 
         $query = Branch::query();
