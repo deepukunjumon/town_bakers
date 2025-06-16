@@ -12,6 +12,8 @@ class OrderSummaryResource extends JsonResource
         return [
             'id' => $this->id,
             'title' => $this->title,
+            'description' => $this->description,
+            'remarks' => $this->remarks,
             'delivery_date' => $this->delivery_date,
             'delivery_time' => $this->delivery_time,
             'delivered_on' => $this->delivered_at ? $this->delivered_at->format('d-m-Y H:i:s') : null,

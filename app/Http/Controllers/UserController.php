@@ -129,6 +129,198 @@ class UserController extends Controller
     }
 
     /**
+     * Get list of users
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function getAllUsers(Request $request): JsonResponse
+    {
+        $query = User::query();
+
+        $perPage = $request->input('per_page', 10);
+        $page = $request->input('page', 1);
+
+        if ($request->has('status')) {
+            $query->where('status', $request->input('status'));
+        }
+
+        if ($request->has('role')) {
+            $query->where('role', $request->input('role'));
+        }
+
+        if ($request->filled('q')) {
+            $search = $request->input('q');
+            $searchableColumns = ['username', 'name', 'mobile', 'email'];
+
+            $query->where(function ($query) use ($search, $searchableColumns) {
+                foreach ($searchableColumns as $column) {
+                    $query->orWhere($column, 'like', "%{$search}%");
+                }
+            });
+        }
+
+
+        $query->orderBy('name', 'asc');
+
+        $users = $query->paginate($perPage, ['id', 'username', 'name', 'mobile', 'email', 'role', 'status'], 'page', $page);
+
+        $transformed = $users->getCollection()->transform(function ($user) {
+            return [
+                'id' => $user->id,
+                'username' => $user->username,
+                'name' => $user->name,
+                'mobile' => $user->mobile,
+                'email' => $user->email,
+                'role_label' => ucwords(str_replace('_', ' ', $user->role)),
+                'role' => $user->role,
+                'status' => $user->status,
+            ];
+        });
+
+        $users->setCollection($transformed);
+
+        return response()->json([
+            'success' => true,
+            'users' => $users->items(),
+            'pagination' => [
+                'total' => $users->total(),
+                'per_page' => $users->perPage(),
+                'current_page' => $users->currentPage(),
+                'last_page' => $users->lastPage(),
+                'from' => $users->firstItem(),
+                'to' => $users->lastItem(),
+            ],
+        ], 200);
+    }
+
+    /**
+     * List of user roles for login
+     * 
+     * @return JsonResponse
+     */
+    public function getUserRoles(): JsonResponse
+    {
+        $roles = array_values(ROLES);
+        $formattedRoles = array_map(function ($role) {
+            return [
+                'value' => $role,
+                'label' => ucwords(str_replace('_', ' ', $role)),
+            ];
+        }, $roles);
+
+        return response()->json([
+            'success' => true,
+            'roles' => $formattedRoles
+        ]);
+    }
+
+    /**
+     * Update User Status
+     * 
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function updateUserStatus(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|exists:users,id',
+            'status' => 'required|in:-1,0,1',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $user = User::find($request->id);
+
+        if ($user->status == $request->status) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Status is already set to the given value',
+            ], 422);
+        }
+
+        $user->status = $request->status;
+
+        if (!$user->save()) {
+            return response()->json([
+                'success' => false,
+                'error' => 'Failed to update user status',
+            ], 500);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Updated',
+        ], 200);
+    }
+
+    /**
+     * Update user details.
+     *
+     * @param Request $request
+     * @param string $user_id
+     * @return JsonResponse
+     */
+    public function updateUserDetails(Request $request, $user_id): JsonResponse
+    {
+        if (!$user_id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Missing mandatory parameter',
+            ], 422);
+        }
+
+        if (!$request->all()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Request data is empty',
+            ], 422);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'name' => 'sometimes|string',
+            'mobile' => 'sometimes|unique:users,mobile|digits:10',
+            'email' => 'sometimes|unique:users,email|email',
+            'role' => 'sometimes|in:' . implode(',', array_values(ROLES))
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $user = User::findOrFail($user_id);
+
+        if ($user['status'] != DEFAULT_STATUSES['active']) {
+            return response()->json([
+                'success' => false,
+                'message' => 'User is not active',
+            ], 400);
+        }
+
+        $user->fill($request->only([
+            'name',
+            'mobile',
+            'email',
+            'role'
+        ]));
+
+        $user->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Updated Successfully',
+        ], 200);
+    }
+
+    /**
      * Get the profile of the authenticated user.
      *
      * @param Request $request
@@ -148,7 +340,7 @@ class UserController extends Controller
             'name' => $user->name,
             'mobile' => $user->mobile,
             'email' => $user->email,
-            'role' => $user->role,
+            'role' => ucwords(str_replace('_', ' ', $user->role)),
             'user_since' => $user->created_at ? $user->created_at->format('Y-m-d') : ""
         ];
 

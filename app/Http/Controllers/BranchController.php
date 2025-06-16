@@ -221,8 +221,8 @@ class BranchController extends Controller
 
         $page = $request->input('page', 1);
         $perPage = $request->input('per_page', 10);
-        $sortKey = $request->input('sortKey', 'created_at');
-        $sortDirection = $request->input('sortDirection', 'desc');
+        $sortKey = $request->input('sortKey', 'code');
+        $sortDirection = $request->input('sortDirection', 'asc');
         $searchQuery = $request->input('q', '');
 
         $query = Branch::query();
@@ -285,6 +285,8 @@ class BranchController extends Controller
         $perPage = $request->input('per_page', 10);
 
         $branches = Branch::select(['id', 'code', 'name', 'status'])
+            ->where('status', DEFAULT_STATUSES['active'])
+            ->orderBy('code', 'asc')
             ->paginate($perPage, ['*'], 'page', $page);
 
         $branchesData = $branches->map(function ($branch) {

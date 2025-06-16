@@ -51,7 +51,8 @@ class DesignationController extends Controller
     public function getActiveDesignations(): JsonResponse
     {
         $designations = Designations::where('status', DEFAULT_STATUSES['active'])
-            ->get(['id', 'designation', 'status'])
+            ->orderBy('designation', 'asc')
+            ->get()
             ->map(function ($designation) {
                 return [
                     'id' => $designation->id,
@@ -92,7 +93,8 @@ class DesignationController extends Controller
         }
 
         // Paginate results
-        $designations = $query->paginate($perPage, ['id', 'designation', 'status'], 'page', $page);
+        $designations = $query->orderBy('designation', 'asc')
+                              ->paginate($perPage, ['id', 'designation', 'status'], 'page', $page);
 
         // Transform the collection before returning
         $designations->getCollection()->transform(function ($item) {
