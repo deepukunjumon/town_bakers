@@ -11,6 +11,7 @@ use App\Http\Controllers\MailController;
 use App\Http\Controllers\DesignationController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\AuditLogController;
+use App\Http\Controllers\EmailLogController;
 use App\Http\Middleware\CheckPasswordResetMiddleware;
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\BranchMiddleware;
@@ -73,6 +74,9 @@ Route::middleware(['jwt.auth'])->group(function () {
             Route::post('/create/order', [OrderController::class, 'adminCreateOrder']);
             Route::get('/orders', [OrderController::class, 'getAllOrders']);
             Route::get('/orders/branch/{branch_id}', [OrderController::class, 'getOrdersByBranchID']);
+
+            Route::get('/logs/email-logs', [EmailLogController::class, 'getEmailLogs']);
+            Route::get('/email-log/types', [EmailLogController::class, 'getEmailTypes']);
         });
 
         // Branch-only routes (NOT affected by AdminMiddleware)
