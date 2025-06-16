@@ -52,7 +52,16 @@ if (!defined('AUDITLOG_ACTIONS')) {
         'ENABLE' => 'Enable',
         'DISABLE' => 'Disable',
 
+        'DELIVERED' => 'Delivered',
         'CANCEL' => 'Cancel',
         'COMPLETE' => 'Complete'
+    ]);
+}
+
+if (!defined('EMAIL_TYPES')) {
+    define('EMAIL_TYPES', [
+        'ORDER_CONFIRMATION' => 'order_confirmation',
+        'ORDER_DELIVERY' => 'order_delivery',
+        'ORDER_CANCELLATION' => 'order_cancellation',
     ]);
 }

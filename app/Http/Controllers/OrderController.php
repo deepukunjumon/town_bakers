@@ -8,7 +8,7 @@ use App\Models\Order;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Resources\OrderSummaryResource;
-use Carbon\Carbon;
+use App\Services\MailService;
 
 class OrderController extends Controller
 {
@@ -283,10 +283,27 @@ class OrderController extends Controller
             'created_by' => $user->id,
         ]);
 
+        if ($request->customer_email) {
+            $body = view('emails.orders.order-confirmation', [
+                'customer_name' => $order->customer_name,
+                'title' => $order->title,
+                'delivery_date' => $order->delivery_date,
+                'delivery_time' => $order->delivery_time,
+                'total_amount' => $order->total_amount,
+                'advance_amount' => $order->advance_amount,
+            ])->render();
+            $sendMail = app(MailService::class)->send([
+                'type' => EMAIL_TYPES['ORDER_CONFIRMATION'],
+                'to' => $request->customer_email,
+                'subject' => 'Order Placed Successfully',
+                'body' => $body,
+            ]);
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Order created',
-            'order_details' => $order
+            'email_sent' => $sendMail
         ]);
     }
 
@@ -312,7 +329,7 @@ class OrderController extends Controller
             ], 422);
         }
 
-        $order = Order::select(['id', 'branch_id', 'payment_status', 'status'])
+        $order = Order::select(['id', 'title', 'branch_id', 'payment_status', 'status', 'customer_name', 'customer_email'])
             ->findOrFail($id);
 
         $user = Auth::user();
@@ -328,13 +345,40 @@ class OrderController extends Controller
             if ($order->payment_status == 0 || $order->payment_status == 1) {
                 $order->payment_status = 2;
             }
-        } elseif ($request->status == -1) {
+
+            $body = view('emails.orders.order-delivered', [
+                'customer_name' => $order['customer_name'],
+                'title' => $order['title']
+            ])->render();
+            $sendMail = app(MailService::class)->send([
+                'type' => EMAIL_TYPES['ORDER_DELIVERY'],
+                'to' => $order['customer_email'],
+                'subject' => 'Order Delivered Successfully',
+                'body' => $body,
+            ]);
+        }
+        if ($request->status == -1) {
             $order->payment_status = -1;
+
+            $body = view('emails.orders.order-cancelled', [
+                'customer_name' => $order['customer_name'],
+                'title' => $order['title']
+            ])->render();
+            $sendMail = app(MailService::class)->send([
+                'type' => EMAIL_TYPES['ORDER_CANCELLATION'],
+                'to' => $order['customer_email'],
+                'subject' => 'Order Cancelled',
+                'body' => $body,
+            ]);
         }
 
         $order->save();
 
-        return response()->json(['success' => true, 'message' => 'Order status updated']);
+        return response()->json([
+            'success' => true,
+            'message' => 'Order status updated',
+            'send_mail' => $sendMail
+        ]);
     }
 
     /**
