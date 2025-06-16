@@ -46,7 +46,7 @@ class MailController extends Controller
         try {
             $mail = new TestMail();
             $message = Mail::to($toEmails);
-            
+
             if (!empty($ccEmails)) {
                 $message->cc($ccEmails);
             }
