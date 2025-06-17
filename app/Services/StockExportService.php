@@ -6,13 +6,12 @@ use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Dompdf\Dompdf;
+use Illuminate\Support\Facades\Storage;
 
 class StockExportService
 {
-    public static function exportExcel($items, $branch_name, $branch_code, $date, $columns)
+    public static function exportExcel($items, $branch_name, $branch_code, $date, $columns, $saveToDisk = false)
     {
-        ob_start();
-
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
 
@@ -44,24 +43,33 @@ class StockExportService
             $row++;
         }
 
-        if (ob_get_length()) ob_end_clean();
-
         $filename = 'Stock_Summary_' . $branch_code . '_' . $date->format('d-m-Y') . '.xlsx';
-        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header("Content-Disposition: attachment; filename=\"$filename\"");
-        header('Cache-Control: max-age=0');
 
-        $writer = new Xlsx($spreadsheet);
-        $writer->save('php://output');
-        exit;
+        if ($saveToDisk) {
+            $filePath = storage_path('app/temp/' . $filename);
+
+            // Ensure temp directory exists
+            if (!file_exists(storage_path('app/temp'))) {
+                mkdir(storage_path('app/temp'), 0755, true);
+            }
+
+            $writer = new Xlsx($spreadsheet);
+            $writer->save($filePath);
+
+            return $filePath;
+        } else {
+            header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+            header("Content-Disposition: attachment; filename=\"$filename\"");
+            header('Cache-Control: max-age=0');
+
+            $writer = new Xlsx($spreadsheet);
+            $writer->save('php://output');
+            exit;
+        }
     }
 
-    public static function exportPdf($items, $branch_name, $branch_code, $branch_address, $date, $columns, $extra = [])
+    public static function exportPdf($items, $branch_name, $branch_code, $branch_address, $date, $columns, $extra = [], $saveToDisk = false)
     {
-        if (ob_get_length()) ob_end_clean();
-
-        ob_start();
-
         $safeBranch = htmlentities($branch_name, ENT_QUOTES, 'UTF-8');
         $safeBranchCode = htmlentities($branch_code, ENT_QUOTES, 'UTF-8');
         $safeBranchAddress = htmlentities($branch_address, ENT_QUOTES, 'UTF-8');
@@ -160,7 +168,20 @@ class StockExportService
         $dompdf->render();
 
         $filename = 'Stock_Summary_' . $safeBranchCode . '_' . $date->format('d-m-Y') . '.pdf';
-        $dompdf->stream($filename, ["Attachment" => true]);
-        exit;
+
+        if ($saveToDisk) {
+            $filePath = storage_path('app/temp/' . $filename);
+
+            // Ensure temp directory exists
+            if (!file_exists(storage_path('app/temp'))) {
+                mkdir(storage_path('app/temp'), 0755, true);
+            }
+
+            file_put_contents($filePath, $dompdf->output());
+            return $filePath;
+        } else {
+            $dompdf->stream($filename, ["Attachment" => true]);
+            exit;
+        }
     }
 }

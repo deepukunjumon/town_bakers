@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use App\Mail\GenericMail;
+use App\Mail\StockSummaryMail;
 
 class MailService
 {
@@ -56,7 +57,16 @@ class MailService
         ]);
 
         try {
-            $mail = new GenericMail($data['subject'], $data['body']);
+            if ($data['type'] === EMAIL_TYPES['STOCK_SUMMARY']) {
+                $mail = new StockSummaryMail(
+                    $data['branchName'],
+                    $data['date'],
+                    $data['filePath'],
+                    $data['fileName']
+                );
+            } else {
+                $mail = new GenericMail($data['subject'], $data['body']);
+            }
 
             $message = Mail::to($to);
             if (!empty($cc)) {
