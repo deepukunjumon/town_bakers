@@ -77,6 +77,7 @@ class StockController extends Controller
             'type' => 'required_if:export,true|in:excel,pdf',
             'per_page' => 'nullable|integer|min:1',
             'page' => 'nullable|integer|min:1',
+            'q' => 'nullable|string|max:255',
         ]);
 
         if ($validator->fails()) {
@@ -107,6 +108,11 @@ class StockController extends Controller
             ])
             ->groupBy('items.id', 'items.name')
             ->orderBy('items.name', 'asc');
+
+        if ($request->filled('q')) {
+            $searchTerm = $request->input('q');
+            $query->where('items.name', 'like', '%' . $searchTerm . '%');
+        }
 
         // Check if export is requested
         if ($request->boolean('export')) {
