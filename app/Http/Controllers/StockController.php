@@ -255,14 +255,23 @@ class StockController extends Controller
 
     /**
      * Send stock summary via email
+     *
+     * @param Request $request
+     * @return JsonResponse
      */
-    public function sendStockSummaryEmail(Request $request)
+    public function sendStockSummaryEmail(Request $request): JsonResponse
     {
+        $branchId = Auth::user()->branch_id;
+        if (!$branchId) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Branch not found'
+            ], 404);
+        }
+
         $validator = Validator::make($request->all(), [
-            'branch_id' => 'required|exists:branches,id',
-            'date' => 'required|date',
-            'format' => 'required|in:excel,pdf',
-            'email' => 'required|email'
+            'date' => 'sometimes|date',
+            'cc' => 'sometimes|array',
         ]);
 
         if ($validator->fails()) {
@@ -274,10 +283,15 @@ class StockController extends Controller
         }
 
         try {
-            $branch = Branch::findOrFail($request->branch_id);
-            $date = Carbon::parse($request->date);
-            $format = $request->format;
-            $email = $request->email;
+            $branch = Branch::findOrFail($branchId);
+            $toArray = DB::table('users')
+                ->whereIn('role', [ROLES['admin'], ROLES['super_admin']])
+                ->pluck('email')
+                ->toArray();
+            $ccArray = array_merge((array) $request->cc, [$branch->email]);
+            $ccArray = array_unique($ccArray);
+            $date = $request->date ? Carbon::parse($request->date) : Carbon::parse(today());
+            $format = 'pdf';
 
             // Get stock items data
             $query = DB::table('stock_items')
@@ -297,11 +311,10 @@ class StockController extends Controller
             if ($query->isEmpty()) {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'No stock data found for the specified date and branch'
+                    'message' => 'No Data Found'
                 ], 404);
             }
 
-            // Format data for export
             $columns = ['Sl. No', 'Item Name', 'Total Quantity'];
             $exportItems = [];
             $i = 1;
@@ -309,7 +322,6 @@ class StockController extends Controller
                 $exportItems[] = [$i++, $item->item_name, $item->total_quantity];
             }
 
-            // Generate the file
             $stockExportService = new StockExportService();
             $filePath = $format === 'excel'
                 ? $stockExportService->exportExcel($exportItems, $branch->name, $branch->code, $date, $columns, true)
@@ -319,15 +331,15 @@ class StockController extends Controller
                 throw new \Exception('Failed to generate export file');
             }
 
-            // Generate filename
-            $fileName = "stock_summary_{$branch->name}_{$date->format('Y-m-d')}." . ($format === 'excel' ? 'xlsx' : 'pdf');
-            $fileName = str_replace(' ', '_', strtolower($fileName));
+            $fileName = "Stock_Summary_{$branch->code}_{$date->format('d-m-Y')}." . ($format === 'excel' ? 'xlsx' : 'pdf');
+            $fileName = str_replace(' ', '_', $fileName);
 
             // Send email
             $mailService = new MailService();
             $mailService->send([
                 'type' => EMAIL_TYPES['STOCK_SUMMARY'],
-                'to' => $email,
+                'to' => $toArray,
+                'cc' => $ccArray,
                 'subject' => "Stock Summary - {$branch->name} ({$date->format('d-m-Y')})",
                 'body' => view('emails.stock.summary', [
                     'branchName' => $branch->name,
@@ -339,17 +351,16 @@ class StockController extends Controller
                 'fileName' => $fileName
             ]);
 
-            // Clean up the temporary file
             if (file_exists($filePath)) {
                 unlink($filePath);
             }
 
             return response()->json([
+                'success' => true,
                 'status' => 'success',
-                'message' => 'Stock summary has been sent successfully'
+                'message' => 'Email Sent Successfully'
             ]);
         } catch (\Exception $e) {
-            // Clean up the temporary file if it exists
             if (isset($filePath) && file_exists($filePath)) {
                 unlink($filePath);
             }
