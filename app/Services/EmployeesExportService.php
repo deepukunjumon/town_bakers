@@ -68,6 +68,9 @@ class EmployeesExportService
         $safeBranchAddress = htmlentities($branch_address, ENT_QUOTES, 'UTF-8');
         $safeDate = $date->format('d-m-Y');
 
+        $logoPath = public_path('images/logo_alt.png');
+        $logoBase64 = base64_encode(file_get_contents($logoPath));
+
         $html = '
         <html>
         <head>
@@ -76,46 +79,57 @@ class EmployeesExportService
                 @page { margin: 30px; }
                 body { font-family: sans-serif; margin: 0; padding: 0; }
                 .page-border {
-                    border: 2px solid #000;
-                    padding: 20px;
-                    box-sizing: border-box;
-                    margin: 15px;
+                    position: absolute;
+                    top: 15px; left: 15px; right: 15px; bottom: 15px;
+                    border: 2px solid #000; padding: 20px; box-sizing: border-box;
                 }
-                h3, h4, p { margin: 5px 0; text-align: center; }
+                .header {
+                    display: flex;
+                    flex-direction: row;
+                    align-items: center;
+                    margin-bottom: 20px;
+                    position: relative;
+                }
+                .logo {
+                    width: 80px;
+                    height: 80px;
+                    position: absolute;
+                    left: 0;
+                }
+                .header-text {
+                    text-align: center;
+                    width: 100%;
+                }
+                h3, h4, p { margin: 5px 0; }
+                h3 { font-size: 16px; }
+                h4 { font-size: 14px; }
                 .text-right { text-align: right; margin-top: 15px; margin-bottom: 10px; }
                 table {
                     width: 100%; border-collapse: collapse; margin-top: 10px;
-                    page-break-inside: auto;
-                }
-                thead {
-                    display: table-header-group;
-                }
-                tfoot {
-                    display: table-footer-group;
-                }
-                tbody {
-                    page-break-inside: auto;
-                }
-                tr {
-                    page-break-inside: avoid;
-                    page-break-after: auto;
                 }
                 th, td {
                     border: 1px solid #000;
                     padding: 6px;
                     font-size: 12px;
                     text-align: center;
-                    vertical-align: middle;
                 }
+                thead { display: table-header-group; }
             </style>
         </head>
         <body>
             <div class="page-border">
-                <h3>' . $safeBranch . ' - ' . $safeBranchCode . '</h3>
-                <h4>' . $safeBranchAddress . '</h4>
-                <br>
-                <h4>Employees List</h4>
-                <p class="text-right"><strong>Date: ' . $safeDate . '</strong></p>
+                <div class="header">
+                    <img src="data:image/png;base64,' . $logoBase64 . '" class="logo" alt="Company Logo">
+                    <div class="header-text">
+                        <h3>' . $safeBranch . '-' . $safeBranchCode . '</h3>
+                        <h4>' . $safeBranchAddress . '</h4>
+                        <br>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <h4>Employees List</h4>
+                            <h4 style="text-align: right; mt=-6">Date: ' . $safeDate . '</h4>
+                        </div>
+                    </div>
+                </div>
                 <table>
                     <colgroup>
                         <col style="width: 12%;"> <!-- Employee Code -->
@@ -128,7 +142,6 @@ class EmployeesExportService
                     </colgroup>
                     <thead>
                         <tr>';
-
 
         foreach ($columns as $header) {
             $html .= '<th>' . htmlentities($header, ENT_QUOTES, 'UTF-8') . '</th>';
