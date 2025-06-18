@@ -92,8 +92,7 @@ class StockController extends Controller
         $branch_code = $branch ? $branch->code : 'Unknown Branch Code';
         $branch_address = $branch ? $branch->address : 'Unknown Branch Address';
 
-        // Use paginate for paginated results
-        $items = DB::table('stock_items')
+        $query = DB::table('stock_items')
             ->join('items', 'stock_items.item_id', '=', 'items.id')
             ->join('trips', 'stock_items.trip_id', '=', 'trips.id')
             ->whereDate('trips.date', $date)
@@ -103,8 +102,7 @@ class StockController extends Controller
                 DB::raw('SUM(stock_items.quantity) as total_quantity')
             ])
             ->groupBy('items.id', 'items.name')
-            ->orderBy('items.name', 'asc')
-            ->paginate($perPage, ['*'], 'page', $page);
+            ->orderBy('items.name', 'asc');
 
         // Check if export is requested
         if ($request->boolean('export')) {
@@ -112,7 +110,9 @@ class StockController extends Controller
             $columns = ['Sl. No', 'Item Name', 'Total Quantity'];
             $exportItems = [];
             $i = 1;
-            foreach ($items->items() as $item) {
+
+            $items = $query->get();
+            foreach ($items as $item) {
                 $exportItems[] = [$i++, $item->item_name, $item->total_quantity];
             }
 
@@ -123,6 +123,8 @@ class StockController extends Controller
                 StockExportService::exportPdf($exportItems, $branch_name, $branch_code, $branch_address, $date, $columns);
             }
         }
+
+        $items = $query->paginate($perPage, ['*'], 'page', $page);
 
         // Return JSON if export is not requested
         return response()->json([
@@ -191,21 +193,22 @@ class StockController extends Controller
             $query->where('items.name', 'like', '%' . $searchTerm . '%');
         }
 
-        $items = $query->select(
+        $query->select(
             'stock_items.item_id',
             'items.name as item_name',
             DB::raw('SUM(stock_items.quantity) as total_quantity')
         )
             ->groupBy('stock_items.item_id', 'items.name')
-            ->orderBy('items.name', 'asc')
-            ->paginate($perPage, ['*'], 'page', $page);
+            ->orderBy('items.name', 'asc');
 
         if ($request->boolean('export')) {
             $type = $request->input('type');
             $columns = ['Sl. No', 'Item Name', 'Total Quantity'];
             $exportItems = [];
             $i = 1;
-            foreach ($items->items() as $item) {
+
+            $items = $query->get();
+            foreach ($items as $item) {
                 $exportItems[] = [$i++, $item->item_name, $item->total_quantity];
             }
 
@@ -216,6 +219,8 @@ class StockController extends Controller
                 StockExportService::exportPdf($exportItems, $branch_name, $branch_code, $branch_address, $date, $columns);
             }
         }
+
+        $items = $query->paginate($perPage, ['*'], 'page', $page);
 
         $formattedData = [
             [
