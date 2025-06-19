@@ -14,6 +14,7 @@ class EmailLog extends Model
         'to',
         'cc',
         'status',
+        'sent_by',
         'error_message'
     ];
 

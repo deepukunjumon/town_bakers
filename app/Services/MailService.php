@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 use App\Mail\GenericMail;
 use App\Mail\StockSummaryMail;
+use Illuminate\Support\Facades\Auth;
 
 class MailService
 {
@@ -54,6 +55,7 @@ class MailService
             'to' => implode(',', $to),
             'cc' => !empty($cc) ? implode(',', $cc) : null,
             'status' => 'pending',
+            'sent_by' => Auth::user()->name ?? 'System',
         ]);
 
         try {
