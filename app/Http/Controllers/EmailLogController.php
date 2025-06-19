@@ -25,6 +25,7 @@ class EmailLogController extends Controller
                 'q' => 'nullable|string',
                 'type' => 'nullable|string',
                 'status' => 'nullable|string',
+                'sent_by' => 'nullable|string',
                 'start_date' => 'nullable|date',
                 'end_date' => 'nullable|date|after_or_equal:start_date',
             ]);
@@ -50,6 +51,7 @@ class EmailLogController extends Controller
                 $query->where(function ($q) use ($search) {
                     $q->where('to', 'like', "%$search%")
                         ->orWhere('cc', 'like', "%$search%")
+                        ->orWhere('sent_by', 'like', "%$search%")
                         ->orWhere('error_message', 'like', "%$search%");
                 });
             }
@@ -76,6 +78,7 @@ class EmailLogController extends Controller
                 'to',
                 'cc',
                 'status',
+                'sent_by',
                 'error_message',
                 'created_at'
             ], 'page', $page);
@@ -87,6 +90,7 @@ class EmailLogController extends Controller
                     'to' => $log->to,
                     'cc' => $log->cc,
                     'status' => $log->status,
+                    'sent_by' => $log->sent_by,
                     'error_message' => $log->error_message,
                     'created_at' => $log->created_at
                 ];

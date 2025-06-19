@@ -93,6 +93,7 @@ Route::middleware(['jwt.auth'])->group(function () {
 
             //Stock routes
             Route::post('/stock/summary', [StockController::class, 'getItemsByDate']);
+            Route::post('/stock/summary/email', [StockController::class, 'sendStockSummaryEmail']);
         });
 
         // General authenticated routes (available to all roles)
