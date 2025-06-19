@@ -11,6 +11,10 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
 use App\Services\StockExportService;
+use App\Mail\StockSummaryMail;
+use App\Services\MailService;
+use Illuminate\Support\Facades\Storage;
+use App\Models\Branch;
 
 class StockController extends Controller
 {
@@ -73,6 +77,7 @@ class StockController extends Controller
             'type' => 'required_if:export,true|in:excel,pdf',
             'per_page' => 'nullable|integer|min:1',
             'page' => 'nullable|integer|min:1',
+            'q' => 'nullable|string|max:255',
         ]);
 
         if ($validator->fails()) {
@@ -92,8 +97,7 @@ class StockController extends Controller
         $branch_code = $branch ? $branch->code : 'Unknown Branch Code';
         $branch_address = $branch ? $branch->address : 'Unknown Branch Address';
 
-        // Use paginate for paginated results
-        $items = DB::table('stock_items')
+        $query = DB::table('stock_items')
             ->join('items', 'stock_items.item_id', '=', 'items.id')
             ->join('trips', 'stock_items.trip_id', '=', 'trips.id')
             ->whereDate('trips.date', $date)
@@ -103,8 +107,12 @@ class StockController extends Controller
                 DB::raw('SUM(stock_items.quantity) as total_quantity')
             ])
             ->groupBy('items.id', 'items.name')
-            ->orderBy('items.name', 'asc')
-            ->paginate($perPage, ['*'], 'page', $page);
+            ->orderBy('items.name', 'asc');
+
+        if ($request->filled('q')) {
+            $searchTerm = $request->input('q');
+            $query->where('items.name', 'like', '%' . $searchTerm . '%');
+        }
 
         // Check if export is requested
         if ($request->boolean('export')) {
@@ -112,7 +120,9 @@ class StockController extends Controller
             $columns = ['Sl. No', 'Item Name', 'Total Quantity'];
             $exportItems = [];
             $i = 1;
-            foreach ($items->items() as $item) {
+
+            $items = $query->get();
+            foreach ($items as $item) {
                 $exportItems[] = [$i++, $item->item_name, $item->total_quantity];
             }
 
@@ -123,6 +133,8 @@ class StockController extends Controller
                 StockExportService::exportPdf($exportItems, $branch_name, $branch_code, $branch_address, $date, $columns);
             }
         }
+
+        $items = $query->paginate($perPage, ['*'], 'page', $page);
 
         // Return JSON if export is not requested
         return response()->json([
@@ -191,21 +203,22 @@ class StockController extends Controller
             $query->where('items.name', 'like', '%' . $searchTerm . '%');
         }
 
-        $items = $query->select(
+        $query->select(
             'stock_items.item_id',
             'items.name as item_name',
             DB::raw('SUM(stock_items.quantity) as total_quantity')
         )
             ->groupBy('stock_items.item_id', 'items.name')
-            ->orderBy('items.name', 'asc')
-            ->paginate($perPage, ['*'], 'page', $page);
+            ->orderBy('items.name', 'asc');
 
         if ($request->boolean('export')) {
             $type = $request->input('type');
             $columns = ['Sl. No', 'Item Name', 'Total Quantity'];
             $exportItems = [];
             $i = 1;
-            foreach ($items->items() as $item) {
+
+            $items = $query->get();
+            foreach ($items as $item) {
                 $exportItems[] = [$i++, $item->item_name, $item->total_quantity];
             }
 
@@ -216,6 +229,8 @@ class StockController extends Controller
                 StockExportService::exportPdf($exportItems, $branch_name, $branch_code, $branch_address, $date, $columns);
             }
         }
+
+        $items = $query->paginate($perPage, ['*'], 'page', $page);
 
         $formattedData = [
             [
@@ -242,5 +257,124 @@ class StockController extends Controller
                 'total' => $items->total(),
             ],
         ]);
+    }
+
+    /**
+     * Send stock summary via email
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function sendStockSummaryEmail(Request $request): JsonResponse
+    {
+        $branchId = Auth::user()->branch_id;
+        if (!$branchId) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Branch not found'
+            ], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'date' => 'sometimes|date',
+            'cc' => 'sometimes|array',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            $branch = Branch::findOrFail($branchId);
+            $toArray = DB::table('users')
+                ->whereIn('role', [ROLES['admin'], ROLES['super_admin']])
+                ->pluck('email')
+                ->toArray();
+            $ccArray = array_merge((array) $request->cc, [$branch->email]);
+            $ccArray = array_unique($ccArray);
+            $date = $request->date ? Carbon::parse($request->date) : Carbon::parse(today());
+            $format = 'pdf';
+
+            // Get stock items data
+            $query = DB::table('stock_items')
+                ->join('items', 'stock_items.item_id', '=', 'items.id')
+                ->join('trips', 'stock_items.trip_id', '=', 'trips.id')
+                ->whereDate('trips.date', $date)
+                ->where('trips.branch_id', $branch->id)
+                ->select(
+                    'stock_items.item_id',
+                    'items.name as item_name',
+                    DB::raw('SUM(stock_items.quantity) as total_quantity')
+                )
+                ->groupBy('stock_items.item_id', 'items.name')
+                ->orderBy('items.name', 'asc')
+                ->get();
+
+            if ($query->isEmpty()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'No Data Found'
+                ], 404);
+            }
+
+            $columns = ['Sl. No', 'Item Name', 'Total Quantity'];
+            $exportItems = [];
+            $i = 1;
+            foreach ($query as $item) {
+                $exportItems[] = [$i++, $item->item_name, $item->total_quantity];
+            }
+
+            $stockExportService = new StockExportService();
+            $filePath = $format === 'excel'
+                ? $stockExportService->exportExcel($exportItems, $branch->name, $branch->code, $date, $columns, true)
+                : $stockExportService->exportPdf($exportItems, $branch->name, $branch->code, $branch->address, $date, $columns, [], true);
+
+            if (!$filePath || !file_exists($filePath)) {
+                throw new \Exception('Failed to generate export file');
+            }
+
+            $fileName = "Stock_Summary_{$branch->code}_{$date->format('d-m-Y')}." . ($format === 'excel' ? 'xlsx' : 'pdf');
+            $fileName = str_replace(' ', '_', $fileName);
+
+            // Send email
+            $mailService = new MailService();
+            $mailService->send([
+                'type' => EMAIL_TYPES['STOCK_SUMMARY'],
+                'to' => $toArray,
+                'cc' => $ccArray,
+                'subject' => "Stock Summary - {$branch->name} ({$date->format('d-m-Y')})",
+                'body' => view('emails.stock.summary', [
+                    'branchName' => $branch->name,
+                    'date' => $date->format('d-m-Y')
+                ])->render(),
+                'branchName' => $branch->name,
+                'date' => $date->format('d-m-Y'),
+                'filePath' => $filePath,
+                'fileName' => $fileName
+            ]);
+
+            if (file_exists($filePath)) {
+                unlink($filePath);
+            }
+
+            return response()->json([
+                'success' => true,
+                'status' => 'success',
+                'message' => 'Email Sent Successfully'
+            ]);
+        } catch (\Exception $e) {
+            if (isset($filePath) && file_exists($filePath)) {
+                unlink($filePath);
+            }
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to send stock summary: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

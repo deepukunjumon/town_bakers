@@ -63,5 +63,6 @@ if (!defined('EMAIL_TYPES')) {
         'ORDER_CONFIRMATION' => 'order_confirmation',
         'ORDER_DELIVERY' => 'order_delivery',
         'ORDER_CANCELLATION' => 'order_cancellation',
+        'STOCK_SUMMARY' => 'stock_summary'
     ]);
 }
