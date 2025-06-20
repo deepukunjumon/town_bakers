@@ -25,7 +25,8 @@ Route::get('/ping', function () {
 // Public routes (no token required)
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
-Route::post('/reset-password', [AuthController::class, 'resetPasswordWithToken']);
+Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
+Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 
 // Protected routes (token required)
 Route::middleware(['jwt.auth'])->group(function () {
