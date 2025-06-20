@@ -16,6 +16,7 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\PasswordResetMail;
+use App\Services\MailService;
 
 class AuthController extends Controller
 {
@@ -95,7 +96,7 @@ class AuthController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'New password must be different from current password',
-            ], 400);
+            ], 409);
         }
 
         if ($request->new_password === DEFAULT_PASSWORD) {
@@ -105,14 +106,44 @@ class AuthController extends Controller
             ], 422);
         }
 
-        $user->password = Hash::make($request->new_password);
-        $user->save();
+        try {
+            DB::beginTransaction();
+            $user->password = Hash::make($request->new_password);
+            $user->save();
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update password',
+            ], 500);
+        }
+
+        $sendMail = false;
+        if (!empty($user->email)) {
+            $body = view('emails.reset-password', ['user' => $user])->render();
+            $sendMail = app(MailService::class)->send([
+                'type' => EMAIL_TYPES['PASSWORD_RESET'],
+                'to' => $user->email,
+                'subject' => 'Password Reset Successful',
+                'body' => $body,
+            ]);
+
+            if (!$sendMail) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to send password reset email',
+                ], 500);
+            }
+        }
 
         return response()->json([
             'success' => true,
             'message' => 'Password updated successfully. Please log in again.',
+            'send_mail' => $sendMail,
         ]);
     }
+
 
     /**
      * Handle user logout.
@@ -184,10 +215,10 @@ class AuthController extends Controller
         }
 
         $user = User::where('email', $request->email)->first();
-        
+
         // Generate a random token
         $token = Str::random(64);
-        
+
         // Store the token in password_reset_tokens table
         DB::table('password_reset_tokens')->updateOrInsert(
             ['email' => $request->email],

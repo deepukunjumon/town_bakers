@@ -117,11 +117,10 @@ Route::middleware(['jwt.auth'])->group(function () {
         Route::post('/employee/update-status', [EmployeeController::class, 'updateEmployeeStatus']);
 
         Route::get('/order/{id}', [OrderController::class, 'getOrderDetailsByID']);
+        Route::put('/order/{id}/status', [OrderController::class, 'updateOrderStatus']);
+        Route::delete('/order/{id}', [OrderController::class, 'deleteOrder']);
 
         Route::post('/stock/add', [StockController::class, 'addStock']);
         Route::get('/stock/trip/{trip_id}', [StockController::class, 'getTripDetails']);
-
-        Route::put('/order/{id}/status', [OrderController::class, 'updateOrderStatus']);
-        Route::delete('/order/{id}', [OrderController::class, 'deleteOrder']);
     });
 });
