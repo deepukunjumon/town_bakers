@@ -312,7 +312,7 @@ class OrderController extends Controller
      * Updates order status
      * 
      * @param Request $request
-     * @param mixed $id
+     * @param string $id
      * 
      * @return JsonResponse
      */
@@ -381,6 +381,30 @@ class OrderController extends Controller
             'message' => 'Order status updated',
             'send_mail' => $sendMail
         ]);
+    }
+
+    /**
+     * Delete order
+     * 
+     * @param Request $request
+     * @param string $id
+     * @return JsonResponse
+     */
+    public function deleteOrder($id): JsonResponse
+    {
+        $user = Auth::user();
+        $order = Order::find($id);
+        if (!$order) {
+            return response()->json(['success' => false, 'message' => 'Order not found'], 404);
+        }
+        if ($order->branch_id != $user->branch_id && !in_array($user->role, [ROLES['super_admin'], ROLES['admin']])) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+        if ($order->status == 1) {
+            return response()->json(['success' => false, 'message' => 'Order cannot be deleted as it is delivered'], 400);
+        }
+        $order->delete();
+        return response()->json(['success' => true, 'message' => 'Order Deleted Successfully'], 200);
     }
 
     /**
