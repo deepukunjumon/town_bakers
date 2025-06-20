@@ -55,7 +55,7 @@ class MailService
             'to' => implode(',', $to),
             'cc' => !empty($cc) ? implode(',', $cc) : null,
             'status' => 'pending',
-            'sent_by' => Auth::user()->name ?? 'System',
+            'sent_by' => $data['sent_by'] ?? 'System',
         ]);
 
         try {

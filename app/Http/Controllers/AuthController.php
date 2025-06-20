@@ -127,6 +127,7 @@ class AuthController extends Controller
                 'to' => $user->email,
                 'subject' => 'Password Reset Successful',
                 'body' => $body,
+                'sent_by' => 'System',
             ]);
 
             if (!$sendMail) {
