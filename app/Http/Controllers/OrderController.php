@@ -283,7 +283,8 @@ class OrderController extends Controller
             'created_by' => $user->id,
         ]);
 
-        if ($request->customer_email) {
+        $sendMail = false;
+        if ($request->customer_email && $request->customer_email != null) {
             $body = view('emails.orders.order-confirmation', [
                 'customer_name' => $order->customer_name,
                 'title' => $order->title,
@@ -341,6 +342,7 @@ class OrderController extends Controller
         $order->delivered_at = $request->status == 1 ? now() : null;
         $order->delivered_by = $request->status == 1 ? $request->delivered_by : null;
 
+        $sendMail = false;
         if ($request->status == 1) {
             if ($order->payment_status == 0 || $order->payment_status == 1) {
                 $order->payment_status = 2;
@@ -545,9 +547,28 @@ class OrderController extends Controller
                 'created_by' => Auth::id(),
             ]);
 
+            $sendMail = false;
+            if ($request->customer_email && $request->customer_email != null) {
+                $body = view('emails.orders.order-confirmation', [
+                    'customer_name' => $order->customer_name,
+                    'title' => $order->title,
+                    'delivery_date' => $order->delivery_date,
+                    'delivery_time' => $order->delivery_time,
+                    'total_amount' => $order->total_amount,
+                    'advance_amount' => $order->advance_amount,
+                ])->render();
+                $sendMail = app(MailService::class)->send([
+                    'type' => EMAIL_TYPES['ORDER_CONFIRMATION'],
+                    'to' => $request->customer_email,
+                    'subject' => 'Order Placed Successfully',
+                    'body' => $body,
+                ]);
+            }
+
             return response()->json([
                 'success' => true,
-                'message' => 'Order created successfully'
+                'message' => 'Order created successfully',
+                'send_mail' => $sendMail
             ], 201);
         } catch (\Exception $e) {
             return response()->json([
