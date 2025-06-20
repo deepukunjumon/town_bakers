@@ -122,5 +122,6 @@ Route::middleware(['jwt.auth'])->group(function () {
         Route::get('/stock/trip/{trip_id}', [StockController::class, 'getTripDetails']);
 
         Route::put('/order/{id}/status', [OrderController::class, 'updateOrderStatus']);
+        Route::delete('/order/{id}', [OrderController::class, 'deleteOrder']);
     });
 });

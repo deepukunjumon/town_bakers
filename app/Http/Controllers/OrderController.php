@@ -283,7 +283,8 @@ class OrderController extends Controller
             'created_by' => $user->id,
         ]);
 
-        if ($request->customer_email) {
+        $sendMail = false;
+        if ($request->customer_email && $request->customer_email != null) {
             $body = view('emails.orders.order-confirmation', [
                 'customer_name' => $order->customer_name,
                 'title' => $order->title,
@@ -311,7 +312,7 @@ class OrderController extends Controller
      * Updates order status
      * 
      * @param Request $request
-     * @param mixed $id
+     * @param string $id
      * 
      * @return JsonResponse
      */
@@ -341,6 +342,7 @@ class OrderController extends Controller
         $order->delivered_at = $request->status == 1 ? now() : null;
         $order->delivered_by = $request->status == 1 ? $request->delivered_by : null;
 
+        $sendMail = false;
         if ($request->status == 1) {
             if ($order->payment_status == 0 || $order->payment_status == 1) {
                 $order->payment_status = 2;
@@ -379,6 +381,30 @@ class OrderController extends Controller
             'message' => 'Order status updated',
             'send_mail' => $sendMail
         ]);
+    }
+
+    /**
+     * Delete order
+     * 
+     * @param Request $request
+     * @param string $id
+     * @return JsonResponse
+     */
+    public function deleteOrder($id): JsonResponse
+    {
+        $user = Auth::user();
+        $order = Order::find($id);
+        if (!$order) {
+            return response()->json(['success' => false, 'message' => 'Order not found'], 404);
+        }
+        if ($order->branch_id != $user->branch_id && !in_array($user->role, [ROLES['super_admin'], ROLES['admin']])) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+        }
+        if ($order->status == 1) {
+            return response()->json(['success' => false, 'message' => 'Order cannot be deleted as it is delivered'], 400);
+        }
+        $order->delete();
+        return response()->json(['success' => true, 'message' => 'Order Deleted Successfully'], 200);
     }
 
     /**
@@ -545,9 +571,28 @@ class OrderController extends Controller
                 'created_by' => Auth::id(),
             ]);
 
+            $sendMail = false;
+            if ($request->customer_email && $request->customer_email != null) {
+                $body = view('emails.orders.order-confirmation', [
+                    'customer_name' => $order->customer_name,
+                    'title' => $order->title,
+                    'delivery_date' => $order->delivery_date,
+                    'delivery_time' => $order->delivery_time,
+                    'total_amount' => $order->total_amount,
+                    'advance_amount' => $order->advance_amount,
+                ])->render();
+                $sendMail = app(MailService::class)->send([
+                    'type' => EMAIL_TYPES['ORDER_CONFIRMATION'],
+                    'to' => $request->customer_email,
+                    'subject' => 'Order Placed Successfully',
+                    'body' => $body,
+                ]);
+            }
+
             return response()->json([
                 'success' => true,
-                'message' => 'Order created successfully'
+                'message' => 'Order created successfully',
+                'send_mail' => $sendMail
             ], 201);
         } catch (\Exception $e) {
             return response()->json([
