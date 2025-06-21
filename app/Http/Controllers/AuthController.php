@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Mail;
 use App\Mail\PasswordResetMail;
 use App\Services\MailService;
 use App\Services\OtpService;
+use App\Services\WhatsAppService;
 
 class AuthController extends Controller
 {
@@ -117,9 +118,22 @@ class AuthController extends Controller
 
             $this->otpService->clearResetToken($request->email);
 
+            $sendMail = false;
+            if ($user->email) {
+                $body = view('emails.password-reset-successful', ['user' => $user])->render();
+                $sendMail = app(MailService::class)->send([
+                    'type' => EMAIL_TYPES['PASSWORD_RESET_SUCCESS'],
+                    'to' => $user->email,
+                    'subject' => 'Password Resetted Successfully',
+                    'body' => $body,
+                    'sent_by' => 'System',
+                ]);
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Password has been reset successfully.',
+                'send_mail' => $sendMail
             ]);
         } catch (\Exception $e) {
             DB::rollBack();

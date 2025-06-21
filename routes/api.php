@@ -12,6 +12,7 @@ use App\Http\Controllers\DesignationController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\EmailLogController;
+use App\Http\Controllers\WhatsAppController;
 use App\Http\Middleware\CheckPasswordResetMiddleware;
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\BranchMiddleware;
@@ -44,6 +45,7 @@ Route::middleware(['jwt.auth'])->group(function () {
             Route::get('/dashboard/stats', [DashboardController::class, 'getSuperAdminDashboardStats']);
             Route::post('/create/user', [UserController::class, 'createUser']);
             Route::post('/test-mail', [MailController::class, 'testMail']);
+            Route::post('/whatsapp/send-message', [WhatsAppController::class, 'sendMessage']);
 
             Route::get('/users', [UserController::class, 'getAllUsers']);
             Route::get('/user-roles', [UserController::class, 'getUserRoles']);
