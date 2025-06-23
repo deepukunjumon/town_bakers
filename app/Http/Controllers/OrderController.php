@@ -633,6 +633,67 @@ class OrderController extends Controller
     }
 
     /**
+     * Update order by admin
+     * 
+     * @param Request $request
+     * @param string $id
+     * @return JsonResponse
+     */
+    public function adminUpdateOrder(Request $request, $id): JsonResponse
+    {
+        $order = Order::find($id);
+        if (!$order) {
+            return response()->json(['success' => false, 'message' => 'Order not found'], 404);
+        }
+        if (!$order->is_editable) {
+            return response()->json(['success' => false, 'message' => 'Order is not editable'], 400);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'title' => 'sometimes|string|max:255',
+            'description' => 'sometimes|nullable|string',
+            'remarks' => 'sometimes|nullable|string',
+            'delivery_date' => 'sometimes|date',
+            'delivery_time' => 'sometimes|date_format:H:i',
+            'customer_name' => 'sometimes|string|max:255',
+            'customer_email' => 'sometimes|nullable|email|max:255',
+            'customer_mobile' => 'sometimes|string|max:15',
+            'employee_id' => 'sometimes|uuid|exists:employees,id',
+            'total_amount' => 'sometimes|numeric|min:0',
+            'advance_amount' => 'sometimes|numeric|min:0',
+            'payment_status' => 'sometimes|in:-1,0,1,2'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $order->fill($request->only([
+            'title',
+            'description',
+            'remarks',
+            'delivery_date',
+            'delivery_time',
+            'customer_name',
+            'customer_email',
+            'customer_mobile',
+            'employee_id',
+            'total_amount',
+            'advance_amount',
+            'payment_status'
+        ]));
+        $order->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Order updated successfully'
+        ]);
+    }
+
+    /**
      * List orders for a specific branch (Admin only)
      * 
      * @param Request $request

@@ -75,6 +75,7 @@ Route::middleware(['jwt.auth'])->group(function () {
 
             // Order routes
             Route::post('/create/order', [OrderController::class, 'adminCreateOrder']);
+            Route::put('/order/{id}/update', [OrderController::class, 'adminUpdateOrder']);
             Route::get('/orders', [OrderController::class, 'getAllOrders']);
             Route::get('/orders/branch/{branch_id}', [OrderController::class, 'getOrdersByBranchID']);
 

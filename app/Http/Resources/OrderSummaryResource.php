@@ -46,7 +46,8 @@ class OrderSummaryResource extends JsonResource
                     'name' => $this->branch->name,
                 ]
                 : null,
-            'is_deletable' => $this->status != ORDER_STATUSES['delivered'],
+            'is_editable' => $this->is_editable,
+            'is_deletable' => $this->is_deletable,
         ];
     }
 }

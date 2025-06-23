@@ -32,6 +32,8 @@ class Order extends Model
         'status',
         'deliverd_time',
         'created_by',
+        'is_editable',
+        'is_deletable',
     ];
 
     protected $casts = [
@@ -124,5 +126,25 @@ class Order extends Model
     public function deliveredByEmployee()
     {
         return $this->belongsTo(Employee::class, 'delivered_by');
+    }
+
+    /**
+     * Determine if the order is editable.
+     *
+     * @return bool
+     */
+    public function getIsEditableAttribute()
+    {
+        return $this->status === ORDER_STATUSES['pending'];
+    }
+
+    /**
+     * Determine if the order is deletable.
+     *
+     * @return bool
+     */
+    public function getIsDeletableAttribute()
+    {
+        return $this->status !== ORDER_STATUSES['delivered'];
     }
 }
