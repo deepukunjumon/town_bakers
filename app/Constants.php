@@ -61,6 +61,7 @@ if (!defined('AUDITLOG_ACTIONS')) {
 if (!defined('EMAIL_TYPES')) {
     define('EMAIL_TYPES', [
         'ORDER_CONFIRMATION' => 'order_confirmation',
+        'ORDER_NOTIFICATION_TO_BRANCH' => 'order_notification_to_branch',
         'ORDER_DELIVERY' => 'order_delivery',
         'ORDER_CANCELLATION' => 'order_cancellation',
         'STOCK_SUMMARY' => 'stock_summary',

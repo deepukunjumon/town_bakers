@@ -8,7 +8,9 @@ use App\Models\Order;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use App\Http\Resources\OrderSummaryResource;
+use App\Models\Branch;
 use App\Services\MailService;
+use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
 {
@@ -553,6 +555,7 @@ class OrderController extends Controller
         }
 
         try {
+            DB::beginTransaction();
             $order = Order::create([
                 'branch_id' => $request->branch_id,
                 'employee_id' => $request->employee_id,
@@ -571,7 +574,7 @@ class OrderController extends Controller
                 'created_by' => Auth::id(),
             ]);
 
-            $sendMail = false;
+            $sendCustomerMail = false;
             if ($request->customer_email && $request->customer_email != null) {
                 $body = view('emails.orders.order-confirmation', [
                     'customer_name' => $order->customer_name,
@@ -581,7 +584,7 @@ class OrderController extends Controller
                     'total_amount' => $order->total_amount,
                     'advance_amount' => $order->advance_amount,
                 ])->render();
-                $sendMail = app(MailService::class)->send([
+                $sendCustomerMail = app(MailService::class)->send([
                     'type' => EMAIL_TYPES['ORDER_CONFIRMATION'],
                     'to' => $request->customer_email,
                     'subject' => 'Order Placed Successfully',
@@ -589,12 +592,38 @@ class OrderController extends Controller
                 ]);
             }
 
+            $sendBranchMail = false;
+            $branch = Branch::where('id', $request->branch_id)->first();
+            if ($branch) {
+                $body = view('emails.orders.order-placed', [
+                    'branch_name' => $branch->name,
+                    'title' => $order->title,
+                    'delivery_date' => $order->delivery_date,
+                    'delivery_time' => $order->delivery_time,
+                    'total_amount' => $order->total_amount,
+                    'advance_amount' => $order->advance_amount,
+                    'customer_name' => $order->customer_name,
+                    'customer_email' => $order->customer_email,
+                    'customer_mobile' => $order->customer_mobile,
+                ])->render();
+                $sendBranchMail = app(MailService::class)->send([
+                    'type' => EMAIL_TYPES['ORDER_NOTIFICATION_TO_BRANCH'],
+                    'to' => $branch->email,
+                    'subject' => 'New Order Placed',
+                    'body' => $body,
+                ]);
+            }
+
+            DB::commit();
+
             return response()->json([
                 'success' => true,
                 'message' => 'Order created successfully',
-                'send_mail' => $sendMail
+                'send_customer_mail' => $sendCustomerMail,
+                'send_branch_mail' => $sendBranchMail
             ], 201);
         } catch (\Exception $e) {
+            DB::rollBack();
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to create order',
