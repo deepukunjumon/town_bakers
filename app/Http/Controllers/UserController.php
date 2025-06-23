@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Validator;
 use Symfony\Component\HttpFoundation\Response;
 use \App\Http\Controllers\EmployeeController;
 use \App\Http\Controllers\BranchController;
+use App\Models\Branch;
+use App\Models\Employee;
 
 class UserController extends Controller
 {
@@ -304,19 +306,42 @@ class UserController extends Controller
                 'message' => 'User is not active',
             ], 400);
         }
+        DB::beginTransaction();
+        try {
+            $user->fill($request->only([
+                'name',
+                'mobile',
+                'email',
+                'role'
+            ]));
 
-        $user->fill($request->only([
-            'name',
-            'mobile',
-            'email',
-            'role'
-        ]));
+            $user->save();
 
-        $user->save();
+            if ($user->role == ROLES['branch']) {
+                $branch = Branch::where('id', $user->branch_id)->first();
+                $branch->email = $request->email;
+                $branch->save();
+            }
+
+            if ($user->role == ROLES['employee']) {
+                $employee = Employee::where('id', $user->employee_id)->first();
+                $employee->email = $request->email;
+                $employee->save();
+            }
+
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update user details',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
 
         return response()->json([
             'success' => true,
-            'message' => 'Updated Successfully',
+            'message' => 'Updated Successfully'
         ], 200);
     }
 
@@ -433,6 +458,18 @@ class UserController extends Controller
                     $user->$key = $value;
                 }
                 $user->save();
+            }
+
+            if ($user->role == ROLES['branch']) {
+                $branch = Branch::where('id', $user->branch_id)->first();
+                $branch->email = $request->email;
+                $branch->save();
+            }
+
+            if ($user->role == ROLES['employee']) {
+                $employee = Employee::where('id', $user->employee_id)->first();
+                $employee->email = $request->email;
+                $employee->save();
             }
 
             if (!empty($branchUpdates)) {
