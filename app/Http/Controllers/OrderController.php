@@ -672,55 +672,68 @@ class OrderController extends Controller
             ], 422);
         }
 
-        if ($order->payment_status == ORDER_PAYMENT_STATUSES['full_paid']) {
-            if ($request->payment_status == ORDER_PAYMENT_STATUSES['advance_paid']) {
-                $order->payment_status = ORDER_PAYMENT_STATUSES['advance_paid'];
-                $order->advance_amount = $request->advance_amount;
+        try {
+            DB::beginTransaction();
+
+            if ($order->payment_status == ORDER_PAYMENT_STATUSES['full_paid']) {
+                if ($request->payment_status == ORDER_PAYMENT_STATUSES['advance_paid']) {
+                    $order->payment_status = ORDER_PAYMENT_STATUSES['advance_paid'];
+                    $order->advance_amount = $request->advance_amount;
+                }
+                if ($request->payment_status == ORDER_PAYMENT_STATUSES['unpaid']) {
+                    $order->payment_status = ORDER_PAYMENT_STATUSES['unpaid'];
+                    $order->advance_amount = 0;
+                }
             }
-            if ($request->payment_status == ORDER_PAYMENT_STATUSES['unpaid']) {
-                $order->payment_status = ORDER_PAYMENT_STATUSES['unpaid'];
-                $order->advance_amount = 0;
+
+            if ($order->payment_status == ORDER_PAYMENT_STATUSES['advance_paid']) {
+                if ($request->payment_status == ORDER_PAYMENT_STATUSES['full_paid']) {
+                    $order->payment_status = ORDER_PAYMENT_STATUSES['full_paid'];
+                    $order->advance_amount = $request->total_amount;
+                }
+                if ($request->payment_status == ORDER_PAYMENT_STATUSES['unpaid']) {
+                    $order->payment_status = ORDER_PAYMENT_STATUSES['unpaid'];
+                    $order->advance_amount = 0;
+                }
             }
-        }
 
-        if ($order->payment_status == ORDER_PAYMENT_STATUSES['advance_paid']) {
-            if ($request->payment_status == ORDER_PAYMENT_STATUSES['full_paid']) {
-                $order->payment_status = ORDER_PAYMENT_STATUSES['full_paid'];
-                $order->advance_amount = $request->total_amount;
+            $order->fill($request->only([
+                'title',
+                'description',
+                'remarks',
+                'delivery_date',
+                'delivery_time',
+                'customer_name',
+                'customer_email',
+                'customer_mobile',
+                'total_amount',
+                'advance_amount',
+                'payment_status'
+            ]));
+
+            if ($request->has('branch_id')) {
+                $order->branch_id = $request->branch_id;
             }
-            if ($request->payment_status == ORDER_PAYMENT_STATUSES['unpaid']) {
-                $order->payment_status = ORDER_PAYMENT_STATUSES['unpaid'];
-                $order->advance_amount = 0;
+            if ($request->has('employee_id')) {
+                $order->employee_id = $request->employee_id;
             }
+
+            $order->save();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Order updated successfully'
+            ]);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update order',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        $order->fill($request->only([
-            'title',
-            'description',
-            'remarks',
-            'delivery_date',
-            'delivery_time',
-            'customer_name',
-            'customer_email',
-            'customer_mobile',
-            'total_amount',
-            'advance_amount',
-            'payment_status'
-        ]));
-
-        if ($request->has('branch_id')) {
-            $order->branch_id = $request->branch_id;
-        }
-        if ($request->has('employee_id')) {
-            $order->employee_id = $request->employee_id;
-        }
-
-        $order->save();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Order updated successfully'
-        ]);
     }
 
     /**
