@@ -41,6 +41,15 @@ if (!defined('ORDER_STATUSES')) {
     ]);
 }
 
+if (!defined('ORDER_PAYMENT_STATUSES')) {
+    define('ORDER_PAYMENT_STATUSES', [
+        'full_paid' => 2,
+        'advance_paid' => 1,
+        'unpaid' => 0,
+        'refunded' => -1,
+    ]);
+}
+
 if (!defined('AUDITLOG_ACTIONS')) {
     define('AUDITLOG_ACTIONS', [
         'CREATE' => 'Create',

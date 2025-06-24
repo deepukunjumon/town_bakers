@@ -671,24 +671,24 @@ class OrderController extends Controller
             ], 422);
         }
 
-        if ($order->payment_status == 2) {
-            if ($request->payment_status == 1) {
-                $order->payment_status = 1;
+        if ($order->payment_status == ORDER_PAYMENT_STATUSES['full_paid']) {
+            if ($request->payment_status == ORDER_PAYMENT_STATUSES['advance_paid']) {
+                $order->payment_status = ORDER_PAYMENT_STATUSES['advance_paid'];
                 $order->advance_amount = $request->advance_amount;
             }
-            if ($request->payment_status == 0) {
-                $order->payment_status = 0;
+            if ($request->payment_status == ORDER_PAYMENT_STATUSES['unpaid']) {
+                $order->payment_status = ORDER_PAYMENT_STATUSES['unpaid'];
                 $order->advance_amount = 0;
             }
         }
 
-        if ($order->payment_status == 1) {
-            if ($request->payment_status == 2) {
-                $order->payment_status = 2;
+        if ($order->payment_status == ORDER_PAYMENT_STATUSES['advance_paid']) {
+            if ($request->payment_status == ORDER_PAYMENT_STATUSES['full_paid']) {
+                $order->payment_status = ORDER_PAYMENT_STATUSES['full_paid'];
                 $order->advance_amount = $request->total_amount;
             }
-            if ($request->payment_status == 0) {
-                $order->payment_status = 0;
+            if ($request->payment_status == ORDER_PAYMENT_STATUSES['unpaid']) {
+                $order->payment_status = ORDER_PAYMENT_STATUSES['unpaid'];
                 $order->advance_amount = 0;
             }
         }
