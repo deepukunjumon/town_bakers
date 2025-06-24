@@ -75,37 +75,28 @@ class DesignationController extends Controller
      */
     public function getAllDesignations(Request $request): JsonResponse
     {
-        $query = Designations::query();
+        $perPage = (int) $request->input('per_page', 10);
+        $page = (int) $request->input('page', 1);
+        $search = $request->input('q');
+        $status = $request->input('status');
 
-        // Default values for pagination
-        $perPage = $request->input('per_page', 10);
-        $page = $request->input('page', 1);
+        $query = Designations::query()
+            ->when(isset($status), function ($q) use ($status) {
+                $q->where('status', $status);
+            })
+            ->when(!empty($search), function ($q) use ($search) {
+                $q->where('designation', 'like', "%{$search}%");
+            })
+            ->orderBy('designation', 'asc');
 
-        // Filtering by status if the parameter exists
-        if ($request->has('status')) {
-            $query->where('status', $request->input('status'));
-        }
+        $designations = $query->paginate($perPage, ['id', 'designation', 'status'], 'page', $page);
 
-        // Searching designations by name if the search term exists
-        if ($request->filled('q')) {
-            $search = $request->input('q');
-            $query->where('designation', 'like', "%{$search}%");
-        }
+        $designations->getCollection()->transform(fn($item) => [
+            'id' => $item->id,
+            'designation' => $item->designation,
+            'status' => $item->status,
+        ]);
 
-        // Paginate results
-        $designations = $query->orderBy('designation', 'asc')
-                              ->paginate($perPage, ['id', 'designation', 'status'], 'page', $page);
-
-        // Transform the collection before returning
-        $designations->getCollection()->transform(function ($item) {
-            return [
-                'id' => $item->id,
-                'designation' => $item->designation,
-                'status' => $item->status,
-            ];
-        });
-
-        // Return the response with designations and pagination
         return response()->json([
             'success' => true,
             'designations' => $designations->items(),
@@ -117,7 +108,7 @@ class DesignationController extends Controller
                 'from' => $designations->firstItem(),
                 'to' => $designations->lastItem(),
             ],
-        ], 200);
+        ]);
     }
 
     /**
