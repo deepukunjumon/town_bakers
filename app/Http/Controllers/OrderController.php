@@ -671,6 +671,28 @@ class OrderController extends Controller
             ], 422);
         }
 
+        if ($order->payment_status == 2) {
+            if ($request->payment_status == 1) {
+                $order->payment_status = 1;
+                $order->advance_amount = $request->advance_amount;
+            }
+            if ($request->payment_status == 0) {
+                $order->payment_status = 0;
+                $order->advance_amount = 0;
+            }
+        }
+
+        if ($order->payment_status == 1) {
+            if ($request->payment_status == 2) {
+                $order->payment_status = 2;
+                $order->advance_amount = $request->total_amount;
+            }
+            if ($request->payment_status == 0) {
+                $order->payment_status = 0;
+                $order->advance_amount = 0;
+            }
+        }
+
         $order->fill($request->only([
             'title',
             'description',
