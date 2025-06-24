@@ -658,6 +658,7 @@ class OrderController extends Controller
             'customer_name' => 'sometimes|string|max:255',
             'customer_email' => 'sometimes|nullable|email|max:255',
             'customer_mobile' => 'sometimes|string|max:15',
+            'branch_id' => 'sometimes|uuid|exists:branches,id',
             'employee_id' => 'sometimes|uuid|exists:employees,id',
             'total_amount' => 'sometimes|numeric|min:0',
             'advance_amount' => 'sometimes|numeric|min:0',
@@ -702,11 +703,18 @@ class OrderController extends Controller
             'customer_name',
             'customer_email',
             'customer_mobile',
-            'employee_id',
             'total_amount',
             'advance_amount',
             'payment_status'
         ]));
+
+        if ($request->has('branch_id')) {
+            $order->branch_id = $request->branch_id;
+        }
+        if ($request->has('employee_id')) {
+            $order->employee_id = $request->employee_id;
+        }
+
         $order->save();
 
         return response()->json([
