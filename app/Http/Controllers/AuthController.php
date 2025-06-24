@@ -231,7 +231,7 @@ class AuthController extends Controller
         if ($user->email) {
             $body = view('emails.password-reset-otp', ['user' => $user, 'otp' => $otp])->render();
             $sendMail = app(MailService::class)->send([
-                'type' => EMAIL_TYPES['PASSWORD_RESET'],
+                'type' => EMAIL_TYPES['PASSWORD_RESET_OTP'],
                 'to' => $user->email,
                 'subject' => 'Password Reset OTP',
                 'body' => $body,

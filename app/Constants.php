@@ -74,6 +74,7 @@ if (!defined('EMAIL_TYPES')) {
         'ORDER_DELIVERY' => 'order_delivery',
         'ORDER_CANCELLATION' => 'order_cancellation',
         'STOCK_SUMMARY' => 'stock_summary',
-        'PASSWORD_RESET' => 'password_reset'
+        'PASSWORD_RESET_OTP' => 'password_reset_otp',
+        'PASSWORD_RESET_SUCCESS' => 'password_reset_success'
     ]);
 }
