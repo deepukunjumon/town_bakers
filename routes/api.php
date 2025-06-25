@@ -60,6 +60,7 @@ Route::middleware(['jwt.auth'])->group(function () {
         // Admin-only routes
         Route::prefix('admin')->middleware(AdminMiddleware::class)->group(function () {
             Route::get('/dashboard/stats', [DashboardController::class, 'getAdminDashboardStats']);
+            Route::get('/dashboard/order/stats', [DashboardController::class, 'getBranchwiseOrderStats']);
             Route::post('/create/branch', [BranchController::class, 'createBranch']);
             Route::post('/create/employee', [EmployeeController::class, 'createEmployeeForAdmin']);
             Route::post('/import/employees', [EmployeeController::class, 'importEmployees']);

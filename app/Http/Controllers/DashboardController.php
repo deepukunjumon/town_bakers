@@ -68,6 +68,56 @@ class DashboardController extends Controller
     }
 
     /**
+     * Branch wise Order Stats
+     * @param $request
+     * @return JsonResponse
+     */
+    public function getBranchwiseOrderStats(Request $request): JsonResponse
+    {
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+        $branch_id = $request->input('branch_id');
+
+        $query = Order::query();
+
+        if ($startDate && $endDate) {
+            $query->whereBetween('delivery_date', [$startDate, $endDate]);
+        }
+
+        if ($branch_id) {
+            $query->where('branch_id', $branch_id);
+        }
+
+        $rawStats = $query
+            ->selectRaw('branch_id, status, COUNT(*) as count')
+            ->groupBy('branch_id', 'status')
+            ->with('branch:id,name')
+            ->get();
+
+        $stats = $rawStats
+            ->groupBy('branch_id')
+            ->map(function ($items, $branchId) {
+                $branchName = optional($items->first()->branch)->name ?? $branchId;
+
+                $statusCounts = $items->pluck('count', 'status')->toArray();
+
+                return [
+                    'branch'    => $branchName,
+                    'pending'   => $statusCounts[ORDER_STATUSES['pending']] ?? 0,
+                    'delivered' => $statusCounts[ORDER_STATUSES['delivered']] ?? 0,
+                    'cancelled' => $statusCounts[ORDER_STATUSES['cancelled']] ?? 0,
+                ];
+            })
+            ->values();
+
+        return response()->json([
+            'success' => true,
+            'data' => $stats
+        ]);
+    }
+
+
+    /**
      * Admin Dashboard Stats
      * @return JsonResponse
      */
