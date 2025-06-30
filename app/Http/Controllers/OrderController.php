@@ -580,7 +580,9 @@ class OrderController extends Controller
             ]);
 
             $sendCustomerMail = false;
-            if ($request->customer_email && $request->customer_email != null) {
+            $isMailNotificationEnabled = self::getSetting('email_notifications_enabled', false);
+
+            if ($isMailNotificationEnabled && !empty($request->customer_email)) {
                 $body = view('emails.orders.order-confirmation', [
                     'customer_name' => $order->customer_name,
                     'title' => $order->title,
