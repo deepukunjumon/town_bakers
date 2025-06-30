@@ -72,13 +72,65 @@ class AuthController extends Controller
     }
 
     /**
+     * Handle initial password reset for default password.
+     *
+     * @param Request $request
+     * @return JsonResponse
+     */
+    public function defaultPasswordReset(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'current_password' => 'required',
+            'new_password' => 'required|string|min:8|confirmed',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        $user = Auth::guard('api')->user();
+
+        if (!Hash::check($request->current_password, $user->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Current password is incorrect',
+            ], 400);
+        }
+
+        if (Hash::check($request->new_password, $user->password)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'New password must be different from current password',
+            ], 400);
+        }
+
+        if ($request->new_password === DEFAULT_PASSWORD) {
+            return response()->json([
+                'success' => false,
+                'message' => 'New password cannot be same as the default password',
+            ], 422);
+        }
+
+        $user->password = Hash::make($request->new_password);
+        $user->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Password updated successfully. Please log in again.',
+        ]);
+    }
+
+    /**
      * Handle password reset.
      *
      * @param Request $request
      * @return JsonResponse
      */
 
-    public function resetPassword(Request $request)
+    public function resetPassword(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
             'email' => 'required|email|exists:users,email',

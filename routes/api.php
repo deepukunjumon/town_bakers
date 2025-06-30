@@ -32,6 +32,7 @@ Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 
 // Protected routes (token required)
 Route::middleware(['jwt.auth'])->group(function () {
+    Route::post('/default-password/reset', [AuthController::class, 'defaultPasswordReset']);
     Route::post('/password/reset', [AuthController::class, 'resetPassword']);
 
     Route::middleware(['check.password.reset'])->group(function () {
