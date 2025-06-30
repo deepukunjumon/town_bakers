@@ -11,9 +11,12 @@ use App\Http\Resources\OrderSummaryResource;
 use App\Models\Branch;
 use App\Services\MailService;
 use Illuminate\Support\Facades\DB;
+use App\Traits\HasSettings;
 
 class OrderController extends Controller
 {
+    use HasSettings;
+
     /**
      * List orders of logged in branch
      * 
@@ -286,7 +289,9 @@ class OrderController extends Controller
         ]);
 
         $sendMail = false;
-        if ($request->customer_email && $request->customer_email != null) {
+        $isMailNotificationEnabled = self::getSetting('email_notifications_enabled', false);
+
+        if ($isMailNotificationEnabled && !empty($request->customer_email)) {
             $body = view('emails.orders.order-confirmation', [
                 'customer_name' => $order->customer_name,
                 'title' => $order->title,
