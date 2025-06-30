@@ -12,6 +12,7 @@ use App\Http\Controllers\DesignationController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\EmailLogController;
+use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\WhatsAppController;
 use App\Http\Middleware\CheckPasswordResetMiddleware;
 use App\Http\Middleware\AdminMiddleware;
@@ -36,6 +37,10 @@ Route::middleware(['jwt.auth'])->group(function () {
     Route::middleware(['check.password.reset'])->group(function () {
         Route::get('/profile', [UserController::class, 'getProfileDetails']);
         Route::post('/update/profile', [UserController::class, 'updateProfileDetails']);
+
+        //Settings
+        Route::get('/settings', [SettingsController::class, 'getSettings']);
+        Route::put('/update/settings', [SettingsController::class, 'updateSettings']);
 
         // Logout
         Route::post('/logout', [AuthController::class, 'logout']);
