@@ -28,12 +28,11 @@ Route::get('/ping', function () {
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
 Route::post('/verify-otp', [AuthController::class, 'verifyOtp']);
-Route::post('/reset-password', [AuthController::class, 'resetPassword']);
+Route::post('/password/reset', [AuthController::class, 'resetPassword']);
 
 // Protected routes (token required)
 Route::middleware(['jwt.auth'])->group(function () {
     Route::post('/default-password/reset', [AuthController::class, 'defaultPasswordReset']);
-    Route::post('/password/reset', [AuthController::class, 'resetPassword']);
 
     Route::middleware(['check.password.reset'])->group(function () {
         Route::get('/profile', [UserController::class, 'getProfileDetails']);
