@@ -37,20 +37,6 @@ return new class extends Migration
             $table->longText('payload');
             $table->integer('last_activity')->index();
         });
-
-        // Insert a super user into the 'users' table after creating it
-        DB::table('users')->insert([
-            'id' => Str::uuid(),
-            'username' => 'superadmin',
-            'name' => 'Super Admin',
-            'mobile' => null,
-            'email' => null,
-            'password' => Hash::make(DEFAULT_PASSWORD),
-            'role' => ROLES['super_admin'],
-            'status' => DEFAULT_STATUSES['active'],
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
     }
 
     public function down(): void
