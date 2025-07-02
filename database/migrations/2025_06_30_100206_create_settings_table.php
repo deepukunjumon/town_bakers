@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('type');
             $table->text('description')->nullable();
             $table->enum('category', ['general', 'notifications']);
+            $table->tinyInteger('is_editable')->default(1)->comment('1: Yes, 0: No');
             $table->timestamps();
         });
     }

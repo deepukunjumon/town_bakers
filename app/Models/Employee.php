@@ -18,6 +18,7 @@ class Employee extends Model
         'employee_code',
         'name',
         'mobile',
+        'email',
         'designation_id',
         'status',
         'branch_id'

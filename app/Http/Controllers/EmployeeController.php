@@ -29,6 +29,7 @@ class EmployeeController extends Controller
             'employee_code' => 'required|string|unique:employees,employee_code',
             'name' => 'required|string',
             'mobile' => 'required|digits:10',
+            'email' => 'nullable|email|unique:employees,email',
             'designation_id' => 'required|exists:designations,id',
             'branch_id' => 'required|exists:branches,id',
         ]);
@@ -44,6 +45,7 @@ class EmployeeController extends Controller
             'employee_code' => $request->employee_code,
             'name' => $request->name,
             'mobile' => $request->mobile,
+            'email' => $request->email,
             'designation_id' => $request->designation_id,
             'status' => DEFAULT_EMPLOYEE_STATUS,
             'branch_id' => $request->branch_id,
@@ -69,6 +71,7 @@ class EmployeeController extends Controller
             'employee_code' => 'required|string|unique:employees,employee_code',
             'name' => 'required|string',
             'mobile' => 'required|digits:10',
+            'email' => 'nullable|email|unique:employees,email',
             'designation_id' => 'required|exists:designations,id',
         ]);
 
@@ -83,6 +86,7 @@ class EmployeeController extends Controller
             'employee_code' => $request->employee_code,
             'name' => $request->name,
             'mobile' => $request->mobile,
+            'email' => $request->email,
             'designation_id' => $request->designation_id,
             'status' => DEFAULT_EMPLOYEE_STATUS,
             'branch_id' => $branchId,
