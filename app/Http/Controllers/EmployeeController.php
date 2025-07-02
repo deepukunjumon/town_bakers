@@ -339,7 +339,7 @@ class EmployeeController extends Controller
             });
         }
 
-        $employees = $query->paginate($perPage, ['id', 'employee_code', 'name', 'designation', 'mobile']);
+        $employees = $query->paginate($perPage, ['id', 'employee_code', 'name', 'designation', 'mobile', 'email']);
 
         $employees->getCollection()->transform(function ($employee) use ($branch) {
             return [
@@ -463,7 +463,7 @@ class EmployeeController extends Controller
                 });
             }
 
-            $employees = $query->paginate($perPage, ['id', 'employee_code', 'name', 'designation_id', 'mobile', 'status'], 'page', $page);
+            $employees = $query->paginate($perPage, ['id', 'employee_code', 'name', 'designation_id', 'mobile', 'email', 'status'], 'page', $page);
 
             $employees->getCollection()->transform(function ($employee) use ($branch) {
                 return [
@@ -603,7 +603,7 @@ class EmployeeController extends Controller
                 'message' => 'Invalid export type specified'
             ], 400);
         } else {
-            $employees = $query->paginate($perPage, ['id', 'employee_code', 'name', 'mobile', 'status', 'branch_id', 'designation_id'], 'page', $page);
+            $employees = $query->paginate($perPage, ['id', 'employee_code', 'name', 'mobile', 'email', 'status', 'branch_id', 'designation_id'], 'page', $page);
 
             $employees->getCollection()->transform(function ($employee) {
                 return [
