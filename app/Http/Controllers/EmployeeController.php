@@ -611,6 +611,7 @@ class EmployeeController extends Controller
                     'employee_code' => $employee->employee_code,
                     'name' => $employee->name,
                     'mobile' => $employee->mobile,
+                    'email' => $employee->email,
                     'status' => $employee->status,
                     'branch_id' => optional($employee->branch)->id ?? 'N/A',
                     'branch_code' => optional($employee->branch)->code ?? 'N/A',
