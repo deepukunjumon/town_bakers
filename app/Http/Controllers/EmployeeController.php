@@ -134,8 +134,9 @@ class EmployeeController extends Controller
             $employeeCode = trim($row[0]);
             $name = trim($row[1]);
             $mobile = trim($row[2]);
-            $designationName = trim($row[3]);
-            $branchCode = trim($row[4]);
+            $email = trim($row[3]);
+            $designationName = trim($row[4]);
+            $branchCode = trim($row[5]);
 
             $designation = Designations::where('designation', $designationName)->first();
             $branch = Branch::where('code', $branchCode)->first();
@@ -144,12 +145,14 @@ class EmployeeController extends Controller
                 'employee_code' => $employeeCode,
                 'name' => $name,
                 'mobile' => $mobile,
+                'email' => $email,
                 'designation_id' => $designation ? $designation->id : null,
                 'branch_id' => $branch ? $branch->id : null,
             ], [
                 'employee_code' => 'required|string|unique:employees,employee_code',
                 'name' => 'required|string',
                 'mobile' => 'required|digits:10',
+                'email' => 'nullable|email|unique:employees:email',
                 'designation_id' => 'required|exists:designations,id',
                 'branch_id' => 'required|exists:branches,id',
             ]);
@@ -166,6 +169,7 @@ class EmployeeController extends Controller
                 'employee_code' => $employeeCode,
                 'name' => $name,
                 'mobile' => $mobile,
+                'email' => $email,
                 'status' => DEFAULT_STATUSES['active'],
                 'designation_id' => $designation->id,
                 'branch_id' => $branch->id,
@@ -228,6 +232,7 @@ class EmployeeController extends Controller
                 'employee_code' => $employee->employee_code,
                 'name' => $employee->name,
                 'mobile' => $employee->mobile,
+                'email' => $employee->email,
                 'status' => $employee->status,
                 'branch_id' => $employee->branch_id,
                 'branch_name' => optional($employee->branch)->name ?? 'N/A',
@@ -264,6 +269,7 @@ class EmployeeController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'sometimes|string',
             'mobile' => 'sometimes|unique:employees,mobile|digits:10',
+            'email' => 'sometimes|email|unique:employees,email',
             'designation_id' => 'sometimes|exists:designations,id',
             'status' => 'sometimes|integer|in:-1,0,1',
             'branch_id' => 'sometimes|exists:branches,id',
@@ -288,6 +294,7 @@ class EmployeeController extends Controller
         $employee->fill($request->only([
             'name',
             'mobile',
+            'email',
             'designation_id',
             'status',
             'branch_id',
@@ -327,7 +334,8 @@ class EmployeeController extends Controller
                 $q->where('employee_code', 'like', "%$search%")
                     ->orWhere('name', 'like', "%$search%")
                     ->orWhere('designation', 'like', "%$search%")
-                    ->orWhere('mobile', 'like', "%$search%");
+                    ->orWhere('mobile', 'like', "%$search%")
+                    ->orWhere('email', 'like', "%$search%");
             });
         }
 
@@ -340,6 +348,7 @@ class EmployeeController extends Controller
                 'name' => $employee->name,
                 'designation' => $employee->designation,
                 'mobile' => $employee->mobile,
+                'email' => $employee->email,
                 'branch_code' => $branch->code,
             ];
         });
@@ -447,6 +456,7 @@ class EmployeeController extends Controller
                     $q->where('employee_code', 'like', "%$search%")
                         ->orWhere('name', 'like', "%$search%")
                         ->orwhere('mobile', 'like', "%$search%")
+                        ->orwhere('email', 'like', "%$search%")
                         ->orWhereHas('designation', function ($q) use ($search) {
                             $q->where('designation', 'like', "%$search%");
                         });
@@ -462,6 +472,7 @@ class EmployeeController extends Controller
                     'name' => $employee->name,
                     'designation' => optional($employee->designation)->designation ?? 'N/A',
                     'mobile' => $employee->mobile,
+                    'email' => $employee->email,
                     'branch_code' => $branch->code,
                     'status' => $employee->status,
                 ];
@@ -539,6 +550,8 @@ class EmployeeController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->where('employee_code', 'like', "%$search%")
                     ->orWhere('name', 'like', "%$search%")
+                    ->orWhere('mobile', 'like', "%$search%")
+                    ->orWhere('email', 'like', "%$search%")
                     ->orWhereHas('branch', function ($q) use ($search) {
                         $q->where('code', 'like', "%$search%");
                     })
