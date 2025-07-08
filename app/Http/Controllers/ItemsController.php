@@ -133,7 +133,6 @@ class ItemsController extends Controller
         $imported = 0;
         $importedItems = [];
 
-        // Start bulk operation to prevent individual audit logs
         Items::startBulkOperation();
 
         foreach ($rows as $index => $row) {
@@ -178,7 +177,6 @@ class ItemsController extends Controller
             }
         }
 
-        // End bulk operation
         Items::endBulkOperation();
 
         // Create a single audit log entry for the import
