@@ -210,8 +210,8 @@ class BranchController extends Controller
         $validator = Validator::make($request->all(), [
             'page' => 'nullable|integer|min:1',
             'per_page' => 'nullable|integer|min:1',
-            'sortKey' => 'nullable|string|in:created_at,code,name',
-            'sortDirection' => 'nullable|string|in:asc,desc',
+            'sort_by' => 'nullable|string|in:created_at,code,name',
+            'sort_order' => 'nullable|string|in:asc,desc',
             'q' => 'nullable|string',
         ]);
 
@@ -221,8 +221,8 @@ class BranchController extends Controller
 
         $page = $request->input('page', 1);
         $perPage = $request->input('per_page', 10);
-        $sortKey = $request->input('sortKey', 'code');
-        $sortDirection = $request->input('sortDirection', 'asc');
+        $sortBy = $request->input('sort_by', 'code');
+        $sortOrder = $request->input('sort_order', 'asc');
         $searchQuery = $request->input('q', '');
 
         $query = Branch::query();
@@ -235,7 +235,7 @@ class BranchController extends Controller
             });
         }
 
-        $query->orderBy($sortKey, $sortDirection);
+        $query->orderBy($sortBy, $sortOrder);
 
         $branches = $query->paginate($perPage, ['*'], 'page', $page);
 

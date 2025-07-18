@@ -519,9 +519,17 @@ class EmployeeController extends Controller
             'per_page' => 'nullable|integer|min:1',
             'page' => 'nullable|integer|min:1',
             'q' => 'nullable|string',
+            'employee_code' => 'nullable|string',
+            'name' => 'nullable|string',
+            'mobile' => 'nullable|string',
+            'email' => 'nullable|string',
             'status' => 'nullable|integer|in:-1,0,1',
-            'branch_code' => 'nullable|string',
+            'branch_id' => 'nullable|integer',
+            'designation_id' => 'nullable|integer',
+            'sort_by' => 'nullable|string|in:employee_code,name,mobile,email,status',
+            'sort_order' => 'nullable|string|in:asc,desc',
         ]);
+
         if ($validator->fails()) {
             return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
         }
@@ -529,16 +537,39 @@ class EmployeeController extends Controller
         $perPage = $request->input('per_page', 10);
         $page = $request->input('page', 1);
         $search = $request->input('q', '');
+        $name = $request->input('name');
+        $employeeCode = $request->input('employee_code');
+        $mobile = $request->input('mobile');
+        $email = $request->input('email');
         $status = $request->input('status');
         $branchId = $request->input('branch_id');
         $designationId = $request->input('designation_id');
         $type = $request->input('type');
         $isExport = $request->boolean('export');
 
-        $query = Employee::with(['branch', 'designation'])->orderBy('employee_code', 'asc');
+        $sortBy = $request->input('sort_by', 'employee_code');
+        $sortOrder = $request->input('sort_order', 'asc');
+
+        $query = Employee::with(['branch', 'designation'])->orderBy($sortBy, $sortOrder);
 
         if (!is_null($status)) {
             $query->where('status', $status);
+        }
+
+        if ($employeeCode) {
+            $query->where('employee_code', $employeeCode);
+        }
+
+        if ($name) {
+            $query->where('name', $name);
+        }
+
+        if ($mobile) {
+            $query->where('mobile', $mobile);
+        }
+
+        if ($email) {
+            $query->where('email', $email);
         }
 
         if ($branchId) {
@@ -609,38 +640,47 @@ class EmployeeController extends Controller
                 'success' => false,
                 'message' => 'Invalid export type specified'
             ], 400);
-        } else {
-            $employees = $query->paginate($perPage, ['id', 'employee_code', 'name', 'mobile', 'email', 'status', 'branch_id', 'designation_id'], 'page', $page);
-
-            $employees->getCollection()->transform(function ($employee) {
-                return [
-                    'id' => $employee->id,
-                    'employee_code' => $employee->employee_code,
-                    'name' => $employee->name,
-                    'mobile' => $employee->mobile,
-                    'email' => $employee->email,
-                    'status' => $employee->status,
-                    'branch_id' => optional($employee->branch)->id ?? 'N/A',
-                    'branch_code' => optional($employee->branch)->code ?? 'N/A',
-                    'branch_name' => optional($employee->branch)->name ?? 'N/A',
-                    'designation_id' => optional($employee->designation)->id ?? 'N/A',
-                    'designation' => optional($employee->designation)->designation ?? 'N/A',
-                ];
-            });
-
-            return response()->json([
-                'success' => true,
-                'employees' => $employees->items(),
-                'pagination' => [
-                    'total' => $employees->total(),
-                    'per_page' => $employees->perPage(),
-                    'current_page' => $employees->currentPage(),
-                    'last_page' => $employees->lastPage(),
-                    'from' => $employees->firstItem(),
-                    'to' => $employees->lastItem(),
-                ],
-            ]);
         }
+
+        $employees = $query->paginate($perPage, [
+            'id',
+            'employee_code',
+            'name',
+            'mobile',
+            'email',
+            'status',
+            'branch_id',
+            'designation_id'
+        ], 'page', $page);
+
+        $employees->getCollection()->transform(function ($employee) {
+            return [
+                'id' => $employee->id,
+                'employee_code' => $employee->employee_code,
+                'name' => $employee->name,
+                'mobile' => $employee->mobile,
+                'email' => $employee->email,
+                'status' => $employee->status,
+                'branch_id' => optional($employee->branch)->id ?? 'N/A',
+                'branch_code' => optional($employee->branch)->code ?? 'N/A',
+                'branch_name' => optional($employee->branch)->name ?? 'N/A',
+                'designation_id' => optional($employee->designation)->id ?? 'N/A',
+                'designation' => optional($employee->designation)->designation ?? 'N/A',
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'employees' => $employees->items(),
+            'pagination' => [
+                'total' => $employees->total(),
+                'per_page' => $employees->perPage(),
+                'current_page' => $employees->currentPage(),
+                'last_page' => $employees->lastPage(),
+                'from' => $employees->firstItem(),
+                'to' => $employees->lastItem(),
+            ],
+        ]);
     }
 
     /**

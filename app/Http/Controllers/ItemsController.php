@@ -206,7 +206,7 @@ class ItemsController extends Controller
 
     /**
      * Get list of items
-     * 
+     *
      * @param Request $request
      * @return JsonResponse
      */
@@ -217,7 +217,12 @@ class ItemsController extends Controller
         $perPage = $request->input('per_page', 10);
         $page = $request->input('page', 1);
 
-        if ($request->has('status')) {
+        if ($request->filled('name')) {
+            $search = $request->input('name');
+            $query->where('name', 'like', "%{$search}%");
+        }
+
+        if ($request->filled('status')) {
             $query->where('status', $request->input('status'));
         }
 
@@ -226,7 +231,23 @@ class ItemsController extends Controller
             $query->where('name', 'like', "%{$search}%");
         }
 
-        $query->orderBy('name', 'asc');
+        if ($request->filled('category')) {
+            $query->where('category', $request->input('category'));
+        }
+
+        $allowedSortFields = ['id', 'name', 'category', 'status'];
+        $sortBy = $request->input('sort_by', 'name');
+        $sortOrder = strtolower($request->input('sort_order', 'asc'));
+
+        if (!in_array($sortBy, $allowedSortFields)) {
+            $sortBy = 'name';
+        }
+
+        if (!in_array($sortOrder, ['asc', 'desc'])) {
+            $sortOrder = 'asc';
+        }
+
+        $query->orderBy($sortBy, $sortOrder);
 
         $items = $query->paginate($perPage, ['id', 'name', 'category', 'status'], 'page', $page);
 
@@ -252,7 +273,7 @@ class ItemsController extends Controller
                 'from' => $items->firstItem(),
                 'to' => $items->lastItem(),
             ],
-        ], 200);
+        ]);
     }
 
     /**

@@ -79,6 +79,8 @@ class DesignationController extends Controller
         $page = (int) $request->input('page', 1);
         $search = $request->input('q');
         $status = $request->input('status');
+        $sortBy = $request->input('sort_by', 'designation');
+        $sortOrder = strtolower($request->input('sort_order', 'asc')) === 'desc' ? 'desc' : 'asc';
 
         $query = Designations::query()
             ->when(isset($status), function ($q) use ($status) {
@@ -87,7 +89,7 @@ class DesignationController extends Controller
             ->when(!empty($search), function ($q) use ($search) {
                 $q->where('designation', 'like', "%{$search}%");
             })
-            ->orderBy('designation', 'asc');
+            ->orderBy($sortBy, $sortOrder);
 
         $designations = $query->paginate($perPage, ['id', 'designation', 'status'], 'page', $page);
 
